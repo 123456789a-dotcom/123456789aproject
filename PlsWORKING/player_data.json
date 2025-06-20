@@ -1,0 +1,32 @@
+{
+    "1228257836547702847": {
+        "id": "1228257836547702847",
+        "name": "Player",
+        "level": 1,
+        "exp": 0,
+        "coins": 200,
+        "area": 1,
+        "inventory": {
+            "Wooden Log": 10,
+            "Normie Fish": 5
+        },
+        "last_worked": null,
+        "time_travels": 0,
+        "last_daily": null,
+        "bonuses": {
+            "exp": 0,
+            "drops": 0,
+            "working": 0
+        },
+        "dungeon_keys": {},
+        "last_dungeon": null,
+        "last_boss": null,
+        "last_pvp": null,
+        "pvp_wins": 0,
+        "pvp_losses": 0,
+        "blackjack_stats": {
+            "wins": 0,
+            "losses": 0
+        }
+    }
+}
