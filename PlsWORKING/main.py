@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord.ui import Button, View
 import logging
 from dotenv import load_dotenv
 import json
@@ -7,6 +8,7 @@ import random
 import asyncio
 import os
 import time
+import datetime
 
 load_dotenv()
 
@@ -16,13 +18,164 @@ OWNER_ID = 1228257836547702847  # Replace this with your actual Discord ID
 # Global variables
 big_dice_pot = 0
 
+# Custom emojis
+CUSTOM_EMOJIS = {
+    # Equipment emojis
+    "Abyss_armor": "<:Abyss_armor:1385156001912852552>",
+    "ABYSS_sword": "<:ABYSS_sword:1385155988532760639>",
+    "Apple_sword": "<:Apple_sword:1385155974993543318>",
+    "Banana_Armor": "<:Banana_Armor:1385155962410893473>",
+    "Coin_Armor": "<:Coin_Armor:1385155936708202517>",
+    "Corrupted_armor": "<:Corrupted_armor:1385155905796051015>",
+    "Corrupted_sword": "<:Corrupted_sword:1385155885055213669>",
+    "EDGY_ARMOR": "<:EDGY_ARMOR:1385155868420603966>",
+    "EDGY_sword": "<:EDGY_sword:1385155848330023003>",
+    "Electronical_Armor": "<:Electronical_Armor:1385155833255690310>",
+    "Electronical_sword": "<:Electronical_sword:1385155815647744020>",
+    "Epic_Armor": "<:Epic_Armor:1385155789609762866>",
+    "Epic_Sword": "<:Epic_Sword:1385155766884896768>",
+    "Eye_Armor": "<:Eye_Armor:1385155727911292958>",
+    "Fish_Armor": "<:Fish_Armor:1385155689894379611>",
+    "Fish_Sword": "<:Fish_Sword:1385155673440124958>",
+    "GODLY_sword": "<:GODLY_sword:1385155634969706587>",
+    "Hair_sword": "<:Hair_sword:1385155616145674310>",
+    "Life_Potion": "<:Life_Potion:1385155592661766225>",
+    "Lootbox_armor": "<:Lootbox_armor:1385155574576189520>",
+    "Lottery_Sword": "<:Lottery_Sword:1385155546314833971>",
+    "Mermaid_Armor": "<:Mermaid_Armor:1385155521262129262>",
+    "OMEGA_armor": "<:OMEGA_armor:1385155497224572999>",
+    "OMEGA_sword": "<:OMEGA_sword:1385155478706720840>",
+    "Ruby_Armor": "<:Ruby_Armor:1385155460981592084>",
+    "Ruby_sword": "<:Ruby_sword:1385155432628224030>",
+    "Space_armor": "<:Space_armor:1385155331570667631>",
+    "Space_sword": "<:Space_sword:1385155313681956864>",
+    "Time_armor": "<:Time_armor:1385155270208000021>",
+    "Time_sword": "<:Time_sword:1385155247827320833>",
+    "Time_Travel": "<:Time_Travel:1385155226763526174>",
+    "ULTRAEDGY_armor": "<:ULTRAEDGY_armor:1385155203208187945>",
+    "ULTRAEDGY_sword": "<:ULTRAEDGY_sword:1385155178532966504>",
+    "ULTRAOMEGA_armor": "<:ULTRAOMEGA_armor:1385155148564922489>",
+    "ULTRAOMEGA_sword": "<:ULTRAOMEGA_sword:1385155128272748694>",
+    "Unicorn_sword": "<:Unicorn_sword:1385155106156314664>",
+    "Void_armor": "<:Void_armor:1385155080675655690>",
+    "Void_sword": "<:Void_sword:1385155062506197002>",
+    "Watermelon_Armor": "<:Watermelon_Armor:1385155027295014973>",
+    "Watermelon_Sword": "<:Watermelon_Sword:1385155008340951060>",
+    "Wolf_armor": "<:Wolf_armor_no_bg:1385154909304918088>",
+    "Wooden_Armor": "<:Wooden_Armor:1385154889574781008>",
+    "Zombie_sword": "<:Zombie_sword:1385154867064213545>",
+    "Wooden_sword": "<:Wooden_sword:1385154841193480222>",
+
+    # Lootbox emojis
+    "VOID_lootbox": "<:VOID_lootbox:1385151227918024804>",
+    "ETERNAL_lootbox": "<:ETERNALlootboxunscreen:1385151174298173563>",
+    "GODLY_Lootbox": "<:GODLY_Lootbox:1385151114265235556>",
+    "Omega_Lootbox": "<:Omega_Lootbox:1385151097366249555>",
+    "Edgy_Lootbox": "<:Edgy_Lootbox:1385151067712389150>",
+    "Epic_Lootbox": "<:Epic_Lootbox:1385151037572382730>",
+    "Rare_lootbox": "<:Rare_lootbox:1385151017640792114>",
+    "Uncommon_lootbox": "<:Uncommon_lootbox:1385150977287651358>",
+    "Common_lootbox": "<:Common_lootbox:1385150954604728341>",
+
+    # Material emojis
+    "Ultra_log": "<:Ultra_log:1385152088090218506>",
+    "ULTIMATE_log": "<:ULTIMATE_log:1385148632713662544>",
+    "Hyper_log": "<:Hyper_log:1385148213983449159>",
+    "Mega_log": "<:Mega_log:1385148070093652048>",
+    "Super_log": "<:Super_log:1385148043329802240>",
+    "Epic_log": "<:Epic_log:1385148006957056081>",
+    "Wooden_log": "<:Wooden_log:1385147952082976798>",
+    "SUPER_fish": "<:SUPER_fish:1385147885011861584>",
+    "Epic_fish": "<:Epic_fish:1385147819094179940>",
+    "Golden_fish": "<:Golden_fish:1385147788265783346>",
+    "Normie_fish": "<:Normie_fish:1385147757383127112>",
+    "Chip": "<:Chip:1385148481496420402>",
+    "Mermaid_hair": "<:Mermaid_hair:1385148446389829723>",
+    "Unicorn_Horn": "<:Unicorn_Horn:1385148416291508296>",
+    "Zombie_eye": "<:Zombie_eye:1385148382741270599>",
+    "Wolf_skin": "<:Wolf_skin:1385148354228523132>",
+    "Ruby": "<:Ruby:1385148273769185281>",
+    "DarkEnergy": "<:DarkEnergy:1385147692438782013>",
+    "Dragon_essence": "<:Dragon_essence:1385147667666964501>",
+    "Time_Dragon_Essence": "<:Time_Dragon_Essence:1385150512781070360>",
+    "Watermelon": "<:Watermelon:1385147622649499701>",
+    "Banana": "<:Banana:1385147574964715520>",
+    "Apple": "<:Apple:1385147539103416340>",
+    "Potato": "<:Potato:1385639502227439808>",
+    "Carrot": "<:Carrot:1385639085938573463>",
+    "Bread": "<:Bread:1385639066300842024>",
+    "Coins": "<:Coins:1385147476117422101>",
+    "Epic_Coin": "<:Epic_Coin:1385149607700463656>",
+    "Guild_ring": "<:Guild_ring:1385149709907263539>",
+    "Arena_Cookie": "<:Arena_Cookie:1385638969991233736>",
+
+    # Monster emojis
+    "Wolf": "<:Wolf:1385232162588196924>",
+    "Slime": "<:Slime:1385232673139851304>",
+    "Goblin": "<:Goblin:1385231475535904840>",
+    "Nymph": "<:Nymph:1385232894657695855>",
+    "Zombie": "<:Zombie:1385232073765425183>",
+    "Ghost": "<:Ghost:1385231356237316156>",
+    "Baby_demon": "<:Baby_demon:1385230950895714384>",
+    "Witch": "<:Witch:1385232178186682529>",
+    "Imp": "<:Imp:1385231852016631898>",
+    "Unicorn": "<:Area_5__Unicorn:1385230926174486628>",
+    "Ghoul": "<:Ghoul:1385231367603753011>",
+    "Giant_Scorpion": "<:Area_5__Giant_Scorpion:1385230920365379614>",
+    "Sorcerer": "<:Sorcerer:1385232628579434606>",
+    "Baby_Robot": "<:Baby_Robot:1385230959615672393>",
+    "Mermaid": "<:Mermaid:1385233248375803994>",
+    "Cecaelia": "<:Cecaelia:1385230992826044538>",
+    "Giant_Piranha": "<:Giant_Piranha:1385231440173858876>",
+    "Nereid": "<:Nereid:1385232996520427571>",
+    "Giant_Crocodile": "<:Giant_Crocodile:1385231383496232981>",
+    "Killer_Robot": "<:Killer_Robot:1385232042173661287>",
+    "Demon": "<:Demon:1385231209348595732>",
+    "Manticore": "<:Manticore:1385233266251927602>",
+    "Dullahan": "<:Dullahan:1385231286032924722>",
+    "Scaled_baby_dragon": "<:Scaled_baby_dragon:1385232813933989960>",
+    "Baby_dragon": "<:Young_dragon:1385232089154060398>",
+    "Young_dragon": "<:Young_dragon:1385232089154060398>",
+    "Kid_dragon": "<:Kid_dragon:1385232021206601829>",
+    "Teen_dragon": "<:Teen_dragon:1385232584132395059>",
+    "Adult_dragon": "<:Adult_dragon:1385230870981640202>",
+    "Old_dragon": "<:Scaled_Old_Dragon:1385232795265405091>",
+    "Ancient_Dragon": "<:Ancient_Dragon:1385230881840697476>",
+    "Elder_Dragon": "<:Ancient_Dragon:1385230881840697476>",
+    "Primordial_Dragon": "<:Ancient_Dragon:1385230881840697476>",
+    "Cosmic_Dragon": "<:Hyper_giant_dragon:1385231748022931476>",
+    "Void_Dragon": "<:VOIDog:1385232244066615376>",
+    "Reality_Dragon": "<:Hyper_giant_dragon:1385231748022931476>",
+    "Time_Dragon": "<:Time_Traveler:1385232433015951381>",
+    "Space_Dragon": "<:Space_sword:1385155313681956864>",
+    "Dimension_Dragon": "<:Hyper_giant_dragon:1385231748022931476>",
+    "Omega_Dragon": "<:OMEGA_sword:1385155478706720840>",
+    "Alpha_Dragon": "<:Ancient_Dragon:1385230881840697476>",
+    "Genesis_Dragon": "<:Ancient_Dragon:1385230881840697476>",
+    "Final_Dragon": "<:Ancient_Dragon:1385230881840697476>",
+    "Ultimate_Dragon": "<:Ancient_Dragon:1385230881840697476>",
+    "Supreme_Dragon": "<:Ancient_Dragon:1385230881840697476>",
+    "Epic_NPC": "<:EPIC_RPG:1385229056387186819>",
+    "God_of_Games": "<:EPIC_RPG:1385229056387186819>",
+    "The_Creator": "<:EPIC_RPG:1385229056387186819>",
+
+    # Special emojis
+    "EPIC_RPG": "<:EPIC_RPG:1385229056387186819>",
+    "time_potion": "<:time_potion:1385637495466754150>",
+    "ATK": "<:ATK:1385638994737500201>",
+    "DEF": "<:DEF:1385639172093771886>",
+    "GODLY_cookie": "<:GODLY_cookie:1385155652954886235>"
+}
+
+def get_emoji(name):
+    """Get custom emoji or return the name if not found"""
+    return CUSTOM_EMOJIS.get(name, name)
+
 handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
-bot = commands.Bot(command_prefix='rpgs ', intents=intents, help_command=None)
-
-
+bot = commands.Bot(command_prefix='rpgs ', intents=intents)
 @bot.event
 async def on_ready():
     global player_data, guild_data
@@ -38,7 +191,6 @@ async def on_ready():
     except Exception as e:
         print(f"Failed to sync commands: {e}")
 
-
 @bot.event
 async def on_message(message):
     # Ignore messages from the bot itself
@@ -47,7 +199,6 @@ async def on_message(message):
 
     # Process commands normally
     await bot.process_commands(message)
-
 
 # Comprehensive Shop System
 SHOP_ITEMS = {
@@ -176,7 +327,7 @@ GUILD_SHOP_ITEMS = {
 # Time Travel Titles
 TT_TITLES = {
     1: "Time traveler",
-    2: "One time wasn't enough",
+    2: "One time wasn't enough", 
     5: "I spend too much time here",
     10: "OOF",
     25: "OOFMEGA",
@@ -198,13 +349,9 @@ AREAS = {
     10: {"name": "Area 10", "monsters": ["Killer Robot", "Manticore", "Dullahan"], "level_req": 45},
     11: {"name": "Area 11", "monsters": ["Scaled Baby Dragon", "Baby Dragon", "Young Dragon"], "level_req": 50},
     12: {"name": "Area 12", "monsters": ["Kid Dragon", "Scaled Kid Dragon", "Not so Young Dragon"], "level_req": 55},
-    13: {"name": "Area 13", "monsters": ["Teen Dragon", "Scaled Teen Dragon", "Definitely Not Young Dragon"],
-         "level_req": 60},
-    14: {"name": "Area 14", "monsters": ["Adult Dragon", "Scaled Adult Dragon", "Not Young at all Dragon"],
-         "level_req": 65},
-    15: {"name": "Area 15",
-         "monsters": ["Old Dragon", "Scaled Old Dragon", "How do you dare call this Dragon \"young\""],
-         "level_req": 70},
+    13: {"name": "Area 13", "monsters": ["Teen Dragon", "Scaled Teen Dragon", "Definitely Not Young Dragon"], "level_req": 60},
+    14: {"name": "Area 14", "monsters": ["Adult Dragon", "Scaled Adult Dragon", "Not Young at all Dragon"], "level_req": 65},
+    15: {"name": "Area 15", "monsters": ["Old Dragon", "Scaled Old Dragon", "How do you dare call this Dragon \"young\""], "level_req": 70},
     16: {"name": "Area 16", "monsters": ["Ancient Dragon", "Elder Dragon", "Primordial Dragon"], "level_req": 75},
     17: {"name": "Area 17", "monsters": ["Cosmic Dragon", "Void Dragon", "Reality Dragon"], "level_req": 80},
     18: {"name": "Area 18", "monsters": ["Time Dragon", "Space Dragon", "Dimension Dragon"], "level_req": 85},
@@ -225,20 +372,6 @@ MOB_DROPS = {
 
 # Dark Energy drops (Areas 16-20)
 DARK_ENERGY_DROP = {"item": "Dark Energy", "chance": 0.1, "sell_price": 5000000}
-
-# Color schemes for different embed types
-EMBED_COLORS = {
-    "success": 0x00ff88,
-    "error": 0xff4757,
-    "warning": 0xffa502,
-    "info": 0x3742fa,
-    "combat": 0xff6b35,
-    "economy": 0xffd700,
-    "level_up": 0xff9ff3,
-    "rare": 0x9c88ff,
-    "epic": 0xff3838,
-    "legendary": 0xf368e0
-}
 
 # Enhanced working drops
 CHOPPING_DROPS = {
@@ -403,8 +536,7 @@ FORGE_RECIPES = {
     },
     "GODLY Sword": {
         "attack": 750, "defense": 0, "level_req": 500, "area_req": 16, "type": "weapon",
-        "materials": {"ULTRA-OMEGA Sword": 1, "ULTRA-OMEGA Armor": 1, "Dragon Essence": 10, "GODLY Lootbox": 1,
-                      "OMEGA Lootbox": 12}
+        "materials": {"ULTRA-OMEGA Sword": 1, "ULTRA-OMEGA Armor": 1, "Dragon Essence": 10, "GODLY Lootbox": 1, "OMEGA Lootbox": 12}
     }
 }
 
@@ -591,14 +723,12 @@ DUNGEONS = {
 player_data = {}
 guild_data = {}
 
-
 def load_player_data():
     try:
         with open('players.json', 'r') as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return {}
-
 
 def load_guild_data():
     try:
@@ -607,22 +737,18 @@ def load_guild_data():
     except (FileNotFoundError, json.JSONDecodeError):
         return {}
 
-
 def save_player_data():
     with open('players.json', 'w') as f:
         json.dump(player_data, f, indent=2)
-
 
 def save_guild_data():
     with open('guilds.json', 'w') as f:
         json.dump(guild_data, f, indent=2)
 
-
 def get_player(user_id):
     if str(user_id) not in player_data:
         return None  # Return None if player doesn't exist
     return player_data[str(user_id)]
-
 
 def create_player(user_id):
     """Create a new player account"""
@@ -633,10 +759,9 @@ def create_player(user_id):
         "max_hp": 100,
         "coins": 100,
         "area": 1,
-        "max_area_reached": 1,
         "weapon": "Wooden Sword",
         "armor": None,
-        "inventory": {"Wooden Sword": 1, "Wooden Log": 50, "Normie Fish": 20, "Apple": 10},
+        "inventory": {"Wooden Log": 50, "Normie Fish": 20, "Apple": 10},  # Equipment not in inventory
         "last_hunt": 0,
         "last_adventure": 0,
         "last_daily": 0,
@@ -653,7 +778,6 @@ def create_player(user_id):
     }
     return player_data[str(user_id)]
 
-
 def check_player_registered(ctx):
     """Check if player is registered, send message if not"""
     player = get_player(ctx.author.id)
@@ -661,14 +785,6 @@ def check_player_registered(ctx):
         ctx.send("🎮 Welcome to disRPG! Please use `rpg start` to create your adventure account first!")
         return False
     return True
-
-
-def create_progress_bar(percentage, length=10, filled_char="█", empty_char="░"):
-    """Create a visual progress bar"""
-    filled_length = int(length * percentage)
-    bar = filled_char * filled_length + empty_char * (length - filled_length)
-    return f"[{bar}] {percentage:.1%}"
-
 
 def level_up_check(player):
     exp_needed = player["level"] * 100
@@ -680,7 +796,6 @@ def level_up_check(player):
         return True
     return False
 
-
 def get_unlocked_commands(area):
     """Get all commands unlocked up to the given area"""
     unlocked = []
@@ -689,19 +804,14 @@ def get_unlocked_commands(area):
             unlocked.extend(commands)
     return unlocked
 
-
-def check_command_unlocked(player_area, command_name, max_area_reached=None):
-    """Check if a command is unlocked for the player's max area reached"""
-    # Use max_area_reached if provided, otherwise fall back to current area
-    check_area = max_area_reached if max_area_reached is not None else player_area
-    unlocked_commands = get_unlocked_commands(check_area)
+def check_command_unlocked(player_area, command_name):
+    """Check if a command is unlocked for the player's area"""
+    unlocked_commands = get_unlocked_commands(player_area)
     return command_name.lower() in [cmd.lower() for cmd in unlocked_commands]
-
 
 def is_owner(user_id):
     """Check if user is the bot owner"""
     return user_id == OWNER_ID
-
 
 @bot.command(name='start')
 async def start_game(ctx):
@@ -715,21 +825,14 @@ async def start_game(ctx):
     # Create new player
     player = create_player(ctx.author.id)
 
-    embed = discord.Embed(title="🎮 Welcome to disRPG!",
-                          description=f"Welcome, {ctx.author.display_name}! Your adventure begins now!", color=0x00ff00)
-    embed.add_field(name="Starting Stats",
-                    value=f"Level: {player['level']}\nHP: {player['hp']}/{player['max_hp']}\nCoins: {player['coins']}\nArea: {player['area']}",
-                    inline=True)
-    embed.add_field(name="Starting Equipment", value=f"Weapon: {player['weapon']}\nStarting materials included!",
-                    inline=True)
-    embed.add_field(name="Get Started",
-                    value="Use `rpg commands` to see all available commands\nTry `rpg hunt` to start your first battle!",
-                    inline=False)
+    embed = discord.Embed(title="🎮 Welcome to disRPG!", description=f"Welcome, {ctx.author.display_name}! Your adventure begins now!", color=0x00ff00)
+    embed.add_field(name="Starting Stats", value=f"Level: {player['level']}\nHP: {player['hp']}/{player['max_hp']}\nCoins: {player['coins']}\nArea: {player['area']}", inline=True)
+    embed.add_field(name="Starting Equipment", value=f"Weapon: {player['weapon']}\nStarting materials included!", inline=True)
+    embed.add_field(name="Get Started", value="Use `rpg commands` to see all available commands\nTry `rpg hunt` to start your first battle!", inline=False)
     embed.add_field(name="Tip", value="Use `rpg profile` to view your stats anytime", inline=False)
 
     save_player_data()
     await ctx.send(embed=embed)
-
 
 @bot.command(name='hunt', aliases=['h'])
 async def hunt(ctx, mode=None):
@@ -764,67 +867,39 @@ async def hunt(ctx, mode=None):
     # Random monster encounter
     monster = random.choice(area["monsters"])
 
-    # Monster emoji mapping
+    # Monster emoji mapping using custom emojis
     monster_emojis = {
-        "Wolf": "<:Wolf:1385232162588196924>", "Slime": "<:Slime:1385232673139851304>",
-        "Goblin": "<:Goblin:1385231475535904840>",
-        "Nymph": "<:Nymph:1385232894657695855>", "Skeleton": "<:Skeleton:1385232713472016384>",
-        "Zombie": "<:Zombie:1385232073765425183>", "Ghost": "<:Ghost:1385231356237316156>",
-        "Baby Demon": "<:Baby_demon:1385230950895714384>",
-        "Witch": "<:Witch:1385232178186682529>", "Imp": "<:Imp:1385231852016631898>",
-        "Unicorn": "<:Area_5__Unicorn:1385230926174486628>", "Ghoul": "<:Ghoul:1385231367603753011>",
-        "Giant Scorpion": "<:Area_5__Giant_Scorpion:1385230920365379614>",
-        "Sorcerer": "<:Sorcerer:1385232628579434606>", "Baby Robot": "<:Baby_Robot:1385230959615672393>",
-        "Mermaid": "<:Mermaid:1385233248375803994>", "Cecaelia": "<:Cecaelia:1385230992826044538>",
-        "Giant Piranha": "<:Giant_Piranha:1385231440173858876>",
-        "Nereid": "<:Nereid:1385232996520427571>", "Giant Crocodile": "<:Giant_Crocodile:1385231383496232981>",
-        "Killer Robot": "<:Killer_Robot:1385232042173661287>", "Demon": "<:Demon:1385231209348595732>", "Harpy": "🦅",
-        "Manticore": "<:Manticore:1385233266251927602>", "Dullahan": "<:Dullahan:1385231286032924722>",
-        "Scaled Baby Dragon": "<:Scaled_baby_dragon:1385232813933989960>", "Baby Dragon": "🐉",
-        "Young Dragon": "<:Young_dragon:1385232089154060398>",
-        "Kid Dragon": "<:Kid_dragon:1385232021206601829>", "Scaled Kid Dragon": "🐲",
-        "Not so Young Dragon": "<:Not_so_young_dragon:1385232953868681409>",
-        "Teen Dragon": "<:Teen_dragon:1385232584132395059>", "Scaled Teen Dragon": "🐲",
-        "Definitely Not Young Dragon": "<:Definetly_not_young_dragon:1385231194584776865>",
-        "Adult Dragon": "<:Adult_dragon:1385230870981640202>", "Scaled Adult Dragon": "🐲",
-        "Not Young at all Dragon": "<:Not_young_at_all_dragon:1385232936969699359>",
-        "Old Dragon": "🐲", "Scaled Old Dragon": "<:Scaled_Old_Dragon:1385232795265405091>",
-        "How do you dare call this Dragon \"young\"": "<:How_do_you_dare_call_this_dragon:1385231530158461019>",
-        "Ancient Dragon": "<:Ancient_Dragon:1385230881840697476>", "Elder Dragon": "🐉", "Primordial Dragon": "🐲",
-        "Cosmic Dragon": "🌌", "Void Dragon": "⚫", "Reality Dragon": "🌍",
-        "Time Dragon": "⏰", "Space Dragon": "🌌", "Dimension Dragon": "🌀",
-        "Omega Dragon": "💫", "Alpha Dragon": "⭐", "Genesis Dragon": "✨",
-        "Final Dragon": "🔥", "Ultimate Dragon": "⚡", "Supreme Dragon": "👑",
-        "Epic NPC": "🎮", "God of Games": "🎯", "The Creator": "✨",
-        # Adventure-only monsters from Epic RPG wiki
-        "Mutant Water Bottle": "<:Mutant_Water_Bottle:1385233103563522209>",
-        "Giant Spider": "<:Giant_Spider:1385231462885757019>", "Bunch of Bees": "<:Bunch_of_bees:1385230980637528135>",
-        "Ogre": "<:Ogre:1385232875191930910>", "Dark Knight": "<:Dark_Knight:1385231176083574814>",
-        "Hyper Giant Bowl": "<:Hyper_Giant_bowl:1385231696584249464>",
-        "Mutant Shoe": "<:Mutant_Shoe:1385233119832969387>", "Werewolf": "<:Werewolf:1385232210734485634>",
-        "Centaur": "<:Centaur:1385231007166234735>",
-        "Chimera": "<:Chimera:1385231021804617829>",
-        "Hyper Giant Aeronautical Engine": "<:Hyper_Giant_Aeronautical_Engine:1385231569161031721>",
-        "Golem": "<:Golem:1385231499342647386>",
-        "Mammoth": "<:Mammoth:1385233279237754970>", "Mutant Esc Key": "<:Mutant_Esc_Key:1385233217283690586>",
-        "Ent": "<:Ent:1385231301405315123>",
-        "Dinosaur": "<:Dinosaur:1385231268890935428>", "Hyper Giant Door": "<:Hyper_Giant_Door:1385231730427957421>",
-        "Cyclops": "<:Cyclops:1385231143531446302>",
-        "Attack Helicopter": "<:Attack_Helicopter:1385230939076034622>",
-        "Mutant Book": "<:Mutant_Book:1385233152775032934>", "Hydra": "<:Hydra:1385231549733011626>",
-        "Kraken": "<:Kraken:1385232055574597764>", "Hyper Giant Chest": "<:Hyper_Giant_Chest:1385231714779140257>",
-        "Leviathan": "<:Leviathan:1385233305066012744>",
-        "War Tank": "<:War_Tank:1385232229390749797>", "Mutant Backpack": "<:Mutant_Backpack:1385233187105669170>",
-        "Wyrm": "<:Wyrm:1385232124361052210>",
-        "Hyper Giant Toilet": "<:Hyper_Giant_Toilet:1385231764468797462>", "Titan": "<:Titan:1385232413961228288>",
-        "Typhon": "<:Typhon:1385232399100543016>",
-        "Hyper Giant Dragon": "<:Hyper_giant_dragon:1385231748022931476>", "Even More Ancient Dragon": "🐲",
-        "Ancientest Dragon": "<:Ancientest_Dragon:1385230898647007382>",
-        "Another Mutant Dragon Like In Area 11 But Stronger": "<:Another_mutant_dragon_like_in_a1:1385230911313936404>",
-        "Just Purple Dragon": "🟣",
-        "Yes As You Expected Another Hyper Giant Dragon But Op Etc": "🐲",
-        "I Have No More Ideas Dragon": "<:I_have_no_more_ideas_dragon:1385231829107347608>",
-        "Mutantest Dragon": "<:Mutantest_dragon:1385233081425985658>"
+        "Wolf": get_emoji("Wolf"), "Slime": get_emoji("Slime"), "Goblin": get_emoji("Goblin"), 
+        "Nymph": get_emoji("Nymph"), "Skeleton": get_emoji("Zombie_eye"),
+        "Zombie": get_emoji("Zombie"), "Ghost": get_emoji("Ghost"), "Baby Demon": get_emoji("Baby_demon"), 
+        "Witch": get_emoji("Witch"), "Imp": get_emoji("Imp"),
+        "Unicorn": get_emoji("Unicorn"), "Ghoul": get_emoji("Ghoul"), "Giant Scorpion": get_emoji("Giant_Scorpion"), 
+        "Sorcerer": get_emoji("Sorcerer"), "Baby Robot": get_emoji("Baby_Robot"),
+        "Mermaid": get_emoji("Mermaid"), "Cecaelia": get_emoji("Cecaelia"), "Giant Piranha": get_emoji("Giant_Piranha"), 
+        "Nereid": get_emoji("Nereid"), "Giant Crocodile": get_emoji("Giant_Crocodile"),
+        "Killer Robot": get_emoji("Killer_Robot"), "Demon": get_emoji("Demon"), "Harpy": get_emoji("Giant_Piranha"), 
+        "Manticore": get_emoji("Manticore"), "Dullahan": get_emoji("Dullahan"),
+        "Scaled Baby Dragon": get_emoji("Scaled_baby_dragon"), "Baby Dragon": get_emoji("Baby_dragon"), 
+        "Young Dragon": get_emoji("Young_dragon"), "Kid Dragon": get_emoji("Kid_dragon"),
+        "Scaled Kid Dragon": get_emoji("Kid_dragon"), "Not so Young Dragon": get_emoji("Young_dragon"), 
+        "Teen Dragon": get_emoji("Teen_dragon"),
+        "Scaled Teen Dragon": get_emoji("Teen_dragon"), "Definitely Not Young Dragon": get_emoji("Teen_dragon"), 
+        "Adult Dragon": get_emoji("Adult_dragon"),
+        "Scaled Adult Dragon": get_emoji("Adult_dragon"), "Not Young at all Dragon": get_emoji("Adult_dragon"), 
+        "Old Dragon": get_emoji("Scaled_Old_Dragon"),
+        "Scaled Old Dragon": get_emoji("Scaled_Old_Dragon"), "How do you dare call this Dragon \"young\"": get_emoji("Ancient_Dragon"),
+        "Ancient Dragon": get_emoji("Ancient_Dragon"), "Elder Dragon": get_emoji("Elder_Dragon"), 
+        "Primordial Dragon": get_emoji("Ancient_Dragon"),
+        "Cosmic Dragon": get_emoji("Cosmic_Dragon"), "Void Dragon": get_emoji("Void_Dragon"), 
+        "Reality Dragon": get_emoji("Reality_Dragon"),
+        "Time Dragon": get_emoji("Time_Dragon"), "Space Dragon": get_emoji("Space_Dragon"), 
+        "Dimension Dragon": get_emoji("Dimension_Dragon"),
+        "Omega Dragon": get_emoji("Omega_Dragon"), "Alpha Dragon": get_emoji("Alpha_Dragon"), 
+        "Genesis Dragon": get_emoji("Genesis_Dragon"),
+        "Final Dragon": get_emoji("Final_Dragon"), "Ultimate Dragon": get_emoji("Ultimate_Dragon"), 
+        "Supreme Dragon": get_emoji("Supreme_Dragon"),
+        "Epic NPC": get_emoji("Epic_NPC"), "God of Games": get_emoji("God_of_Games"), 
+        "The Creator": get_emoji("The_Creator")
     }
 
     if is_hardmode:
@@ -888,49 +963,13 @@ async def hunt(ctx, mode=None):
 
     monster_emoji = monster_emojis.get(monster, "👹")
 
-    # Create beautiful embed instead of plain text
-    embed = discord.Embed(
-        title=f"⚔️ {mode_text}Combat Report",
-        description=f"**{ctx.author.display_name}** encountered a {monster_emoji} **{monster.upper()}**",
-        color=EMBED_COLORS["combat"]
-    )
+    # Format the message like the example
+    result_message = f"**{ctx.author.display_name}** found and killed a {monster_emoji} **{mode_text}{monster.upper()}**\n"
+    result_message += f"Earned **{coin_gain:,}** coins and **{exp_gain:,}** XP\n"
+    result_message += f"Lost **{damage_taken}** HP, remaining HP is **{player['hp']}/{player['max_hp']}**"
 
-    # Add monster thumbnail (you can replace with actual images)
-    embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1234567890.png")
-
-    # Battle results with visual bars
-    hp_percentage = player['hp'] / player['max_hp']
-    hp_bar = create_progress_bar(hp_percentage, 10, "🟩", "🟥")
-
-    embed.add_field(
-        name="💀 Battle Result",
-        value=f"Defeated the {monster_emoji} **{monster.upper()}**",
-        inline=False
-    )
-
-    embed.add_field(
-        name="💰 Rewards Earned",
-        value=f"```yaml\nCoins: +{coin_gain:,}\nEXP:   +{exp_gain:,}```",
-        inline=True
-    )
-
-    embed.add_field(
-        name="❤️ Health Status",
-        value=f"```diff\n- Damage Taken: {damage_taken}\n+ HP Remaining: {player['hp']}/{player['max_hp']}```\n{hp_bar}",
-        inline=True
-    )
-
-    # Add area context
-    embed.add_field(
-        name="🗺️ Location",
-        value=f"Area {player['area']} - {AREAS[player['area']]['name']}",
-        inline=True
-    )
-
-    result_message = ""
-
-    # Check for mob drops and add to embed
-    rare_drops = []
+    # Check for mob drops
+    drop_messages = []
 
     # Check specific mob drops
     if monster in MOB_DROPS:
@@ -947,17 +986,17 @@ async def hunt(ctx, mode=None):
                 player["inventory"][drop_item] = 0
             player["inventory"][drop_item] += 1
 
-            # Format drop message with emoji
+            # Format drop message like the example (with emoji)
             drop_emoji = {
                 "Wolf Skin": "🐺",
-                "Zombie Eye": "👁️",
+                "Zombie Eye": "👁️", 
                 "Unicorn Horn": "🦄",
                 "Mermaid Hair": "🧜‍♀️",
                 "Chip": "🤖",
                 "Dragon Scale": "🐲"
             }.get(drop_item, "💎")
 
-            rare_drops.append(f"{drop_emoji} **{drop_item}** x1")
+            result_message += f"\n**{ctx.author.display_name}** got **1** {drop_emoji} **{drop_item.lower()}**"
 
     # Check for Dark Energy (Areas 16-20)
     if 16 <= player["area"] <= 20:
@@ -966,37 +1005,14 @@ async def hunt(ctx, mode=None):
             if "Dark Energy" not in player["inventory"]:
                 player["inventory"]["Dark Energy"] = 0
             player["inventory"]["Dark Energy"] += 1
-            rare_drops.append("🌌 **Dark Energy** x1")
+            result_message += f"\n**{ctx.author.display_name}** got **1** 🌌 **dark energy**"
 
-    # Add rare drops to embed if any
-    if rare_drops:
-        embed.add_field(
-            name="✨ Rare Drops!",
-            value="\n".join(rare_drops),
-            inline=False
-        )
-        embed.color = EMBED_COLORS["rare"]
-
-    # Check level up and enhance embed
+    # Check level up
     if level_up_check(player):
-        embed.add_field(
-            name="🎊 LEVEL UP!",
-            value=f"Congratulations! You reached **Level {player['level']}**!\n+20 Max HP gained!",
-            inline=False
-        )
-        embed.color = EMBED_COLORS["level_up"]
-
-        # Add celebration footer
-        embed.set_footer(text="🎉 Keep adventuring to unlock new areas and commands!")
-
-    # Add timestamp and author
-    embed.timestamp = discord.utils.utcnow()
-    embed.set_author(name=ctx.author.display_name,
-                     icon_url=ctx.author.avatar.url if ctx.author.avatar else ctx.author.default_avatar.url)
+        result_message += f"\n🎊 **LEVEL UP!** You reached level **{player['level']}**!"
 
     save_player_data()
-    await ctx.send(embed=embed)
-
+    await ctx.send(result_message)
 
 @bot.command(name='stats')
 async def stats(ctx):
@@ -1015,7 +1031,6 @@ async def stats(ctx):
     embed.add_field(name="Weapon", value=player["weapon"], inline=True)
 
     await ctx.send(embed=embed)
-
 
 @bot.command(name='heal')
 async def heal(ctx):
@@ -1058,8 +1073,7 @@ async def heal(ctx):
     # No life potions, check for coins
     heal_cost = 50
     if player["coins"] < heal_cost:
-        await ctx.send(
-            "You don't have enough coins to heal! Buy life potions with `rpg buy life potion` or earn them from daily rewards.")
+        await ctx.send("You don't have enough coins to heal! Buy life potions with `rpg buy life potion` or earn them from daily rewards.")
         return
 
     player["hp"] = player["max_hp"]
@@ -1078,12 +1092,10 @@ async def heal(ctx):
         player["hp"] = player["max_hp"]
 
         embed = discord.Embed(title="💊 Healing Complete", color=0xffaa00)
-        embed.add_field(name="Result", value=f"HP restored but max HP reduced by {hp_loss} due to Area 16+ penalty",
-                        inline=False)
+        embed.add_field(name="Result", value=f"HP restored but max HP reduced by {hp_loss} due to Area 16+ penalty", inline=False)
         embed.add_field(name="New Max HP", value=f"{player['max_hp']}", inline=True)
         embed.add_field(name="Cost", value=f"{heal_cost} coins", inline=True)
-        embed.add_field(name="Tip", value="Use life potions or brew potion potions to avoid this penalty!",
-                        inline=False)
+        embed.add_field(name="Tip", value="Use life potions or brew potion potions to avoid this penalty!", inline=False)
     else:
         embed = discord.Embed(title="💊 Healing Complete", color=0x00ff00)
         embed.add_field(name="Result", value=f"HP restored to {player['max_hp']}", inline=False)
@@ -1092,16 +1104,15 @@ async def heal(ctx):
     save_player_data()
     await ctx.send(embed=embed)
 
-
 async def handle_heal_event(ctx, player):
     """Handle the mysterious heal event"""
     embed = discord.Embed(title="😴 Mysterious Event", color=0x800080)
-    embed.add_field(name="What happened?",
-                    value="Your rest got interrupted! You notice that someone stole your money and gear!",
-                    inline=False)
-    embed.add_field(name="What do you do?",
-                    value="React with 😭 to **Cry** or 🔍 to **Search** for the mysterious person!",
-                    inline=False)
+    embed.add_field(name="What happened?", 
+                   value="Your rest got interrupted! You notice that someone stole your money and gear!", 
+                   inline=False)
+    embed.add_field(name="What do you do?", 
+                   value="React with 😭 to **Cry** or 🔍 to **Search** for the mysterious person!", 
+                   inline=False)
 
     message = await ctx.send(embed=embed)
     await message.add_reaction("😭")
@@ -1116,17 +1127,15 @@ async def handle_heal_event(ctx, player):
         if str(reaction.emoji) == "😭":
             # Cry - safe option
             embed = discord.Embed(title="😭 You cried yourself to sleep...", color=0x00ff00)
-            embed.add_field(name="Result",
-                            value="You woke up hoping it was all a dream. Your HP is restored and nothing else happened.",
-                            inline=False)
+            embed.add_field(name="Result", value="You woke up hoping it was all a dream. Your HP is restored and nothing else happened.", inline=False)
             player["hp"] = player["max_hp"]
 
         elif str(reaction.emoji) == "🔍":
             # Search - leads to more choices
             embed = discord.Embed(title="🔍 You decide to search...", color=0x800080)
-            embed.add_field(name="You found the mysterious person!",
-                            value="React with 😭 to **Cry** or ⚔️ to **Fight**!",
-                            inline=False)
+            embed.add_field(name="You found the mysterious person!", 
+                           value="React with 😭 to **Cry** or ⚔️ to **Fight**!", 
+                           inline=False)
 
             await message.clear_reactions()
             await message.edit(embed=embed)
@@ -1134,15 +1143,12 @@ async def handle_heal_event(ctx, player):
             await message.add_reaction("⚔️")
 
             try:
-                reaction2, user2 = await bot.wait_for('reaction_add', timeout=30.0,
-                                                      check=lambda r, u: u == ctx.author and str(r.emoji) in ["😭",
-                                                                                                              "⚔️"] and r.message.id == message.id)
+                reaction2, user2 = await bot.wait_for('reaction_add', timeout=30.0, check=lambda r, u: u == ctx.author and str(r.emoji) in ["😭", "⚔️"] and r.message.id == message.id)
 
                 if str(reaction2.emoji) == "😭":
                     # Cry again
                     embed = discord.Embed(title="😭 You cried...", color=0x00ff00)
-                    embed.add_field(name="Result",
-                                    value="The mysterious person felt bad and left. Your HP is restored.", inline=False)
+                    embed.add_field(name="Result", value="The mysterious person felt bad and left. Your HP is restored.", inline=False)
                     player["hp"] = player["max_hp"]
 
                 elif str(reaction2.emoji) == "⚔️":
@@ -1155,9 +1161,7 @@ async def handle_heal_event(ctx, player):
                         player["hp"] = player["max_hp"]
 
                         embed = discord.Embed(title="⚔️ Victory!", color=0x00ff00)
-                        embed.add_field(name="Result",
-                                        value=f"You defeated the mysterious person and gained a level! ({old_level} → {player['level']})",
-                                        inline=False)
+                        embed.add_field(name="Result", value=f"You defeated the mysterious person and gained a level! ({old_level} → {player['level']})", inline=False)
                         embed.add_field(name="Bonus", value=f"Max HP increased to {player['max_hp']}", inline=False)
                     else:
                         # Defeat - lose a level
@@ -1168,21 +1172,16 @@ async def handle_heal_event(ctx, player):
                             player["hp"] = player["max_hp"]
 
                             embed = discord.Embed(title="💀 Defeat!", color=0xff0000)
-                            embed.add_field(name="Result",
-                                            value=f"The mysterious person was too strong! You lost a level. ({old_level} → {player['level']})",
-                                            inline=False)
+                            embed.add_field(name="Result", value=f"The mysterious person was too strong! You lost a level. ({old_level} → {player['level']})", inline=False)
                             embed.add_field(name="Penalty", value=f"Max HP reduced to {player['max_hp']}", inline=False)
                         else:
                             player["hp"] = player["max_hp"]
                             embed = discord.Embed(title="💀 Defeat!", color=0xff0000)
-                            embed.add_field(name="Result",
-                                            value="The mysterious person was too strong, but you can't lose any more levels!",
-                                            inline=False)
+                            embed.add_field(name="Result", value="The mysterious person was too strong, but you can't lose any more levels!", inline=False)
 
             except asyncio.TimeoutError:
                 embed = discord.Embed(title="⏰ No Response", color=0x808080)
-                embed.add_field(name="Result", value="You took too long to decide. Your HP is restored normally.",
-                                inline=False)
+                embed.add_field(name="Result", value="You took too long to decide. Your HP is restored normally.", inline=False)
                 player["hp"] = player["max_hp"]
 
     except asyncio.TimeoutError:
@@ -1192,7 +1191,6 @@ async def handle_heal_event(ctx, player):
 
     await message.edit(embed=embed)
     await message.clear_reactions()
-
 
 @bot.command(name='area')
 async def area_command(ctx, action=None, area_num=None):
@@ -1230,11 +1228,12 @@ async def area_command(ctx, action=None, area_num=None):
 
             old_area = player["area"]
             player["area"] = target_area
-
+            
             # Update max area reached
             if "max_area_reached" not in player:
-                player["max_area_reached"] = old_area
-            player["max_area_reached"] = max(player["max_area_reached"], target_area)
+                player["max_area_reached"] = target_area
+            else:
+                player["max_area_reached"] = max(player["max_area_reached"], target_area)
 
             # Check for newly unlocked commands
             newly_unlocked = []
@@ -1263,9 +1262,7 @@ async def area_command(ctx, action=None, area_num=None):
 
         if player["area"] < 21:
             next_area = AREAS[player["area"] + 1]
-            embed.add_field(name="Next Area",
-                            value=f"Area {player['area'] + 1} - {next_area['name']} (Level {next_area['level_req']})",
-                            inline=False)
+            embed.add_field(name="Next Area", value=f"Area {player['area'] + 1} - {next_area['name']} (Level {next_area['level_req']})", inline=False)
 
         # Show unlocked commands for current area
         unlocked_commands = get_unlocked_commands(player["area"])
@@ -1279,27 +1276,91 @@ async def area_command(ctx, action=None, area_num=None):
 
         await ctx.send(embed=embed)
 
-
-@bot.command(name='inventory')
+@bot.command(name='inventory', aliases=['inv', 'i'])
 async def inventory(ctx):
     player = get_player(ctx.author.id)
     if player is None:
-        await ctx.send("🎮 Welcome to disRPG! Please use `rpg start` to create your adventure account first!")
+        await ctx.send("🎮 Welcome to disRPG! Please use `rpgs start` to create your adventure account first!")
         return
 
     embed = discord.Embed(title=f"🎒 {ctx.author.display_name}'s Inventory", color=0xffd700)
 
-    if player["inventory"]:
-        inv_text = ""
+    if player.get("inventory") and len(player["inventory"]) > 0:
+        # Categorize items
+        weapons = []
+        armors = []
+        consumables = []
+        materials = []
+        lootboxes = []
+        other_items = []
+        
         for item, quantity in player["inventory"].items():
-            inv_text += f"{item}: {quantity}\n"
-        embed.add_field(name="Items", value=inv_text, inline=False)
+            # Get emoji for item
+            item_emoji = get_emoji(item.replace(" ", "_"))
+            if item_emoji == item.replace(" ", "_"):  # No custom emoji found
+                item_emoji = "📦"  # Default emoji
+            
+            formatted_item = f"{item_emoji} **{item}:** {quantity:,}"
+            
+            # Categorize items
+            if any(weapon in item for weapon in ["Sword", "sword"]):
+                weapons.append(formatted_item)
+            elif any(armor in item for armor in ["Armor", "armor"]):
+                armors.append(formatted_item)
+            elif item.lower() in ["life potion", "time potion", "xp potion", "luck potion"]:
+                consumables.append(formatted_item)
+            elif "lootbox" in item.lower() or "lb" in item.lower():
+                lootboxes.append(formatted_item)
+            elif item in ["Wooden Log", "Epic Log", "Super Log", "Mega Log", "HYPER Log", "ULTRA Log", "ULTIMATE Log",
+                         "Normie Fish", "Golden Fish", "EPIC Fish", "SUPER Fish", "Ruby", "Wolf Skin", "Zombie Eye",
+                         "Unicorn Horn", "Mermaid Hair", "Chip", "Dragon Scale", "Dark Energy", "Dragon Essence",
+                         "Time Dragon Essence", "Apple", "Banana", "Watermelon", "Potato", "Carrot", "Bread"]:
+                materials.append(formatted_item)
+            else:
+                other_items.append(formatted_item)
+        
+        # Display categorized items
+        if weapons:
+            embed.add_field(name="⚔️ Weapons", value="\n".join(weapons[:10]), inline=True)
+        
+        if armors:
+            embed.add_field(name="🛡️ Armor", value="\n".join(armors[:10]), inline=True)
+        
+        if consumables:
+            embed.add_field(name="💊 Consumables", value="\n".join(consumables[:10]), inline=True)
+        
+        if materials:
+            # Split materials if too many
+            if len(materials) > 15:
+                embed.add_field(name="🔧 Materials (Part 1)", value="\n".join(materials[:15]), inline=False)
+                if len(materials) > 15:
+                    embed.add_field(name="🔧 Materials (Part 2)", value="\n".join(materials[15:30]), inline=False)
+            else:
+                embed.add_field(name="🔧 Materials", value="\n".join(materials), inline=False)
+        
+        if lootboxes:
+            embed.add_field(name="🎁 Lootboxes", value="\n".join(lootboxes[:10]), inline=True)
+        
+        if other_items:
+            embed.add_field(name="📦 Other Items", value="\n".join(other_items[:10]), inline=True)
+            
     else:
         embed.add_field(name="Items", value="Empty", inline=False)
 
-    embed.add_field(name="Coins", value=player["coins"], inline=True)
+    # Add coins and other currencies
+    epic_coins = player.get("epic_coins", 0)
+    guild_rings = player.get("guild_rings", 0)
+    
+    money_text = f"{get_emoji('Coins')} **{player['coins']:,}** Coins"
+    if epic_coins > 0:
+        money_text += f"\n{get_emoji('Epic_Coin')} **{epic_coins:,}** Epic Coins"
+    if guild_rings > 0:
+        money_text += f"\n{get_emoji('Guild_ring')} **{guild_rings:,}** Guild Rings"
+    
+    embed.add_field(name="💰 Currency", value=money_text, inline=True)
 
     await ctx.send(embed=embed)
+
 
 
 @bot.command(name='shop')
@@ -1308,103 +1369,51 @@ async def shop(ctx, page=None):
 
     if page == "2":
         # Page 2 - Lootboxes and Special Items
-        embed = discord.Embed(
-            title="🏪 Mystical Marketplace",
-            description="*Premium Lootboxes & Special Items*",
-            color=EMBED_COLORS["economy"]
-        )
-        embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1234567890.png")  # Replace with actual lootbox icon
+        embed = discord.Embed(title="🏪 Shop - Page 2", color=0xffd700)
 
-        # Lootboxes with enhanced display
-        lootbox_list = []
+        # Lootboxes
+        lootbox_text = ""
         for name, data in SHOP_ITEMS["lootboxes"].items():
             if player and player["level"] >= data["level_req"]:
-                status = "✅ Available"
-                price_color = "+"
+                status = "✅"
             else:
-                status = f"🔒 Requires Level {data['level_req']}"
-                price_color = "-"
+                status = f"🔒 Lvl {data['level_req']}"
 
-            alias = f" `{data['alias']}`" if "alias" in data else ""
-            lootbox_list.append(f"{price_color} {name}{alias}\n  💰 {data['price']:,} coins • {status}")
+            alias = f" ({data['alias']})" if "alias" in data else ""
+            lootbox_text += f"{name}{alias} - {data['price']:,} coins {status}\n"
 
-        embed.add_field(
-            name="🎁 Premium Lootboxes",
-            value=f"```diff\n" + "\n".join(lootbox_list) + "```",
-            inline=False
-        )
-
-        embed.add_field(
-            name="⚠️ Purchase Rules",
-            value="```yaml\nCooldown: 3 hours between purchases\nRequirement: Must meet level requirements\nBonus: Higher tiers = better rewards```",
-            inline=False
-        )
-
-        embed.add_field(
-            name="🛏️ Special Item",
-            value=f"```css\nMagic Bed - {SHOP_ITEMS['other']['magic bed']['price']} coins\n{SHOP_ITEMS['other']['magic bed']['description']}```",
-            inline=False
-        )
+        embed.add_field(name="🎁 Lootboxes", value=lootbox_text, inline=False)
+        embed.add_field(name="Note", value="You can buy a lootbox every 3 hours!\nHigher tier lootboxes require higher levels.", inline=False)
+        embed.add_field(name="Other Items", value=f"**Magic Bed** - {SHOP_ITEMS['other']['magic bed']['price']} coins\n{SHOP_ITEMS['other']['magic bed']['description']}", inline=False)
+        embed.add_field(name="Navigation", value="Use `rpg shop` for page 1", inline=False)
 
     else:
-        # Page 1 - Basic Items with enhanced layout
-        embed = discord.Embed(
-            title="🏪 Adventure Outfitters",
-            description="*Essential Items & Equipment*",
-            color=EMBED_COLORS["economy"]
-        )
-        embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1234567890.png")  # Replace with actual shop icon
+        # Page 1 - Basic Items
+        embed = discord.Embed(title="🏪 Shop - Page 1", color=0xffd700)
 
-        # Basic Items in organized format
-        basic_items = []
+        # Basic Items
+        basic_text = ""
         for name, data in SHOP_ITEMS["basic_items"].items():
-            if isinstance(data['price'], str):
-                price_str = data['price']
-            else:
-                price_str = f"{data['price']:,} coins"
-            basic_items.append(f"• **{name}** - {price_str}\n  *{data['description']}*")
+            basic_text += f"**{name}** - {data['price']}\n{data['description']}\n\n"
 
-        embed.add_field(
-            name="🛡️ Essential Equipment",
-            value="\n\n".join(basic_items),
-            inline=False
-        )
+        embed.add_field(name="🛡️ Basic Items", value=basic_text, inline=False)
 
-        # Life Boosts with pricing tiers
-        boost_items = []
+        # Life Boosts
+        boost_text = ""
         for name, data in SHOP_ITEMS["boosts"].items():
-            boost_items.append(f"• **{name}** - {data['price']:,} coins\n  *{data['description']}*")
+            boost_text += f"**{name}** - {data['price']:,} coins\n{data['description']}\n\n"
 
-        embed.add_field(
-            name="💊 Health Enhancement",
-            value="\n\n".join(boost_items),
-            inline=False
-        )
+        embed.add_field(name="💊 Life Boosts", value=boost_text, inline=False)
 
-        # Quick access items
-        embed.add_field(
-            name="🎲 Quick Access",
-            value=f"```yaml\nLottery Ticket: {SHOP_ITEMS['lottery']['lottery ticket']['description']}\nGarden Seed:    {SHOP_ITEMS['farming']['seed']['price']:,} coins - {SHOP_ITEMS['farming']['seed']['description']}```",
-            inline=False
-        )
+        # Other categories
+        other_text = f"**Lottery Ticket** - {SHOP_ITEMS['lottery']['lottery ticket']['description']}\n"
+        other_text += f"**Seed** - {SHOP_ITEMS['farming']['seed']['price']:,} coins\n{SHOP_ITEMS['farming']['seed']['description']}\n"
 
-    # Player's current coins and navigation
-    embed.add_field(
-        name="💰 Your Wallet",
-        value=f"```yaml\nCurrent Balance: {player['coins']:,} coins```",
-        inline=True
-    )
+        embed.add_field(name="🎲 Other Items", value=other_text, inline=False)
+        embed.add_field(name="Navigation", value="Use `rpg shop 2` for lootboxes and more items", inline=False)
 
-    nav_text = "📄 `rpg shop` - Basic Items\n📄 `rpg shop 2` - Lootboxes\n🛒 `rpg buy <item>` - Purchase"
-    embed.add_field(
-        name="🧭 Navigation",
-        value=nav_text,
-        inline=True
-    )
-
-    embed.set_footer(text="💡 Tip: Higher areas unlock better equipment in the craft system!")
+    embed.add_field(name="Usage", value="Use `rpg buy <item_name>` to purchase items", inline=False)
     await ctx.send(embed=embed)
-
 
 @bot.command(name='buy')
 async def buy(ctx, *, item_name=None):
@@ -1472,6 +1481,11 @@ async def buy(ctx, *, item_name=None):
 
                 if player["coins"] < price:
                     await ctx.send(f"You need {price} coins to buy this weapon!")
+                    return
+
+                # Check if player already has a sword equipped
+                if player.get("weapon") and player["weapon"] != "Wooden Sword":
+                    await ctx.send("You can't carry more than 1 sword at once! Sell your current one with `rpgs sell sword`")
                     return
 
                 player["coins"] -= price
@@ -1573,7 +1587,6 @@ async def buy(ctx, *, item_name=None):
     save_player_data()
     await ctx.send(embed=embed)
 
-
 @bot.command(name='epicshop', aliases=['eshop'])
 async def epic_shop(ctx, category=None):
     player = get_player(ctx.author.id)
@@ -1606,17 +1619,15 @@ async def epic_shop(ctx, category=None):
 
     else:
         embed = discord.Embed(title="⭐ Epic Shop", description="Premium items for Epic Coins", color=0x9932cc)
-        embed.add_field(name="Categories",
-                        value="`rpg epicshop upgrades` - Permanent upgrades\n`rpg epicshop backgrounds` - Profile backgrounds\n`rpg epicshop consumables` - Temporary boosts",
-                        inline=False)
-        embed.add_field(name="Note", value="Epic Coins are earned through special events, voting, and achievements!",
-                        inline=False)
+        embed.add_field(name="Categories", 
+                       value="`rpg epicshop upgrades` - Permanent upgrades\n`rpg epicshop backgrounds` - Profile backgrounds\n`rpg epicshop consumables` - Temporary boosts", 
+                       inline=False)
+        embed.add_field(name="Note", value="Epic Coins are earned through special events, voting, and achievements!", inline=False)
 
     embed.add_field(name="Your Epic Coins", value=f"💎 {epic_coins}", inline=True)
     embed.add_field(name="Usage", value="Use `rpg buy <item_name>` to purchase with Epic Coins", inline=False)
 
     await ctx.send(embed=embed)
-
 
 @bot.command(name='leaderboard', aliases=['top', 'ranking'])
 async def leaderboard(ctx, leaderboard_type="level", page=1):
@@ -1680,18 +1691,220 @@ async def leaderboard(ctx, leaderboard_type="level", page=1):
 
     # Show available leaderboard types
     if leaderboard_type == "level":
-        embed.add_field(name="Other Leaderboards",
-                        value="`rpg top coins` - Richest players\n`rpg top tt` - Most time travels",
-                        inline=False)
+        embed.add_field(name="Other Leaderboards", 
+                       value="`rpg top coins` - Richest players\n`rpg top tt` - Most time travels", 
+                       inline=False)
 
     # Pagination info
     total_pages = (len(sorted_players) + per_page - 1) // per_page
-    embed.add_field(name="Navigation",
-                    value=f"Page {page}/{total_pages}\nUse `rpg top {leaderboard_type} {page + 1}` for next page",
-                    inline=False)
+    embed.add_field(name="Navigation", value=f"Page {page}/{total_pages}\nUse `rpg top {leaderboard_type} {page + 1}` for next page", inline=False)
 
     await ctx.send(embed=embed)
 
+def get_enchantment_level(enchant_value):
+    """Convert enchantment ATK/DEF value to enchantment name"""
+    if enchant_value == 0:
+        return "normie"
+    elif 1 <= enchant_value <= 4:
+        return "good"
+    elif 5 <= enchant_value <= 9:
+        return "great"
+    elif 10 <= enchant_value <= 14:
+        return "mega"
+    elif 15 <= enchant_value <= 24:
+        return "epic"
+    elif 25 <= enchant_value <= 39:
+        return "hyper"
+    elif 40 <= enchant_value <= 54:
+        return "ultimate"
+    elif 55 <= enchant_value <= 69:
+        return "perfect"
+    elif 70 <= enchant_value <= 99:
+        return "edgy"
+    elif 100 <= enchant_value <= 124:
+        return "ultra-edgy"
+    elif 125 <= enchant_value <= 149:
+        return "omega"
+    elif 150 <= enchant_value <= 199:
+        return "ultra-omega"
+    elif 200 <= enchant_value <= 299:
+        return "godly"
+    elif 300 <= enchant_value <= 304:
+        return "void"
+    elif enchant_value >= 305:
+        return "eternal"
+    else:
+        return "normie"
+
+def calculate_player_attack(player):
+    """Calculate total player attack including weapon and enchantments"""
+    base_attack = player["level"]
+    
+    # Weapon attack
+    weapon = player.get("weapon", "Wooden Sword")
+    weapon_attack = 0
+    
+    # Check crafted weapons first
+    if weapon in CRAFT_RECIPES:
+        weapon_attack = CRAFT_RECIPES[weapon]["attack"]
+    elif weapon in FORGE_RECIPES:
+        weapon_attack = FORGE_RECIPES[weapon]["attack"]
+    elif weapon in VOID_FORGE_RECIPES:
+        weapon_attack = VOID_FORGE_RECIPES[weapon]["attack"]
+    elif weapon in WEAPONS:
+        weapon_attack = WEAPONS[weapon]["attack"]
+    
+    # Enchantments
+    enchant_bonus = 0
+    if weapon in player.get("enchants", {}):
+        enchant_bonus = player["enchants"][weapon].get("attack", 0)
+    
+    # Cooking boosts
+    cooking_attack = player.get("cooking_boosts", {}).get("attack_boost", 0)
+    
+    total_attack = base_attack + weapon_attack + enchant_bonus + cooking_attack
+    return total_attack
+
+def calculate_player_defense(player):
+    """Calculate total player defense including armor and enchantments"""
+    base_defense = player["level"]
+    
+    # Armor defense
+    armor = player.get("armor")
+    armor_defense = 0
+    
+    if armor:
+        # Check crafted armor first
+        if armor in CRAFT_RECIPES:
+            armor_defense = CRAFT_RECIPES[armor]["defense"]
+        elif armor in FORGE_RECIPES:
+            armor_defense = FORGE_RECIPES[armor]["defense"]
+        elif armor in VOID_FORGE_RECIPES:
+            armor_defense = VOID_FORGE_RECIPES[armor]["defense"]
+    
+    # Enchantments
+    enchant_bonus = 0
+    if armor and armor in player.get("enchants", {}):
+        enchant_bonus = player["enchants"][armor].get("defense", 0)
+    
+    # Cooking boosts
+    cooking_defense = player.get("cooking_boosts", {}).get("defense_boost", 0)
+    
+    total_defense = base_defense + armor_defense + enchant_bonus + cooking_defense
+    return total_defense
+
+def get_weapon_emoji(weapon_name):
+    """Get emoji for weapon"""
+    weapon_emojis = {
+        "Wooden Sword": get_emoji("Wooden_sword"),
+        "Fish Sword": get_emoji("Fish_Sword"),
+        "Apple Sword": get_emoji("Apple_sword"),
+        "Zombie Sword": get_emoji("Zombie_sword"),
+        "Ruby Sword": get_emoji("Ruby_sword"),
+        "Unicorn Sword": get_emoji("Unicorn_sword"),
+        "Hair Sword": get_emoji("Hair_sword"),
+        "Coin Sword": "💰",
+        "Electronical Sword": get_emoji("Electronical_sword"),
+        "EDGY Sword": get_emoji("EDGY_sword"),
+        "ULTRA-EDGY Sword": get_emoji("ULTRAEDGY_sword"),
+        "OMEGA Sword": get_emoji("OMEGA_sword"),
+        "ULTRA-OMEGA Sword": get_emoji("ULTRAOMEGA_sword"),
+        "GODLY Sword": get_emoji("GODLY_sword"),
+        "VOID Sword": get_emoji("Void_sword"),
+        "ABYSS Sword": get_emoji("ABYSS_sword"),
+        "CORRUPTED Sword": get_emoji("Corrupted_sword"),
+        "SPACE Sword": get_emoji("Space_sword"),
+        "TIME Sword": get_emoji("Time_sword")
+    }
+    return weapon_emojis.get(weapon_name, "⚔️")
+
+def get_armor_emoji(armor_name):
+    """Get emoji for armor"""
+    armor_emojis = {
+        "Fish Armor": get_emoji("Fish_Armor"),
+        "Wolf Armor": get_emoji("Wolf_armor"),
+        "Eye Armor": get_emoji("Eye_Armor"),
+        "Banana Armor": get_emoji("Banana_Armor"),
+        "Epic Armor": get_emoji("Epic_Armor"),
+        "Ruby Armor": get_emoji("Ruby_Armor"),
+        "Coin Armor": get_emoji("Coin_Armor"),
+        "Mermaid Armor": get_emoji("Mermaid_Armor"),
+        "Electronical Armor": get_emoji("Electronical_Armor"),
+        "EDGY Armor": get_emoji("EDGY_ARMOR"),
+        "ULTRA-EDGY Armor": get_emoji("ULTRAEDGY_armor"),
+        "OMEGA Armor": get_emoji("OMEGA_armor"),
+        "ULTRA-OMEGA Armor": get_emoji("ULTRAOMEGA_armor"),
+        "VOID Armor": get_emoji("Void_armor"),
+        "ABYSS Armor": get_emoji("Abyss_armor"),
+        "CORRUPTED Armor": get_emoji("Corrupted_armor"),
+        "SPACE Armor": get_emoji("Space_armor"),
+        "TIME Armor": get_emoji("Time_armor")
+    }
+    return armor_emojis.get(armor_name, "🛡️")
+
+def get_player_rank(player):
+    """Calculate player rank based on level, area, time travels, and achievements"""
+    level = player["level"]
+    area = player["area"]
+    tt_count = player.get("time_travels", 0)
+    
+    # Time Travel based ranks (highest priority)
+    if tt_count >= 200:
+        return "🌌 Eternal God"
+    elif tt_count >= 150:
+        return "⭐ Eternal Legend"
+    elif tt_count >= 100:
+        return "🌟 Void Transcendent"
+    elif tt_count >= 75:
+        return "🔮 Void Master"
+    elif tt_count >= 50:
+        return "💫 Reality Shaper"
+    elif tt_count >= 25:
+        return "⚡ Godly Warrior"
+    elif tt_count >= 15:
+        return "🏆 Omega Champion"
+    elif tt_count >= 10:
+        return "💎 Ultra Legend"
+    elif tt_count >= 5:
+        return "🌠 Ultra Hero"
+    elif tt_count >= 3:
+        return "✨ Epic Adventurer"
+    elif tt_count >= 1:
+        return "⏰ Time Traveler"
+    
+    # Area + Level based ranks (for non-time travelers)
+    elif area >= 21:
+        return "👑 THE TOP Conqueror"
+    elif area >= 19:
+        return "🐲 Dragon Slayer Supreme"
+    elif area >= 16:
+        return "🌌 Void Explorer"
+    elif area >= 15:
+        return "⚔️ Ancient Dragon Hunter"
+    elif area >= 11:
+        return "🔥 Dragon Hunter"
+    elif area >= 8:
+        return "🌊 Deep Sea Master"
+    elif area >= 5:
+        return "🦄 Unicorn Tamer"
+    elif area >= 3 and level >= 50:
+        return "💀 Undead Slayer"
+    elif level >= 100:
+        return "🎖️ Master Adventurer"
+    elif level >= 75:
+        return "⭐ Expert Fighter"
+    elif level >= 50:
+        return "🛡️ Veteran Warrior"
+    elif level >= 25:
+        return "⚔️ Skilled Fighter"
+    elif level >= 15:
+        return "🗡️ Experienced Warrior"
+    elif level >= 10:
+        return "🛡️ Trained Fighter"
+    elif level >= 5:
+        return "⚔️ Apprentice"
+    else:
+        return "🌱 Novice Adventurer"
 
 @bot.command(name='profile', aliases=['p'])
 async def profile(ctx, user: discord.User = None):
@@ -1705,6 +1918,7 @@ async def profile(ctx, user: discord.User = None):
         else:
             await ctx.send(f"{user.display_name} hasn't started their adventure yet!")
         return
+    
     area_name = AREAS[player["area"]]["name"]
 
     # Build title display
@@ -1712,90 +1926,85 @@ async def profile(ctx, user: discord.User = None):
     if player.get("active_title"):
         title_display = f"{player['active_title']} {user.display_name}"
 
-    embed = discord.Embed(
-        title=f"👤 {title_display}",
-        description=f"*Adventure Profile*",
-        color=EMBED_COLORS["info"]
-    )
+    embed = discord.Embed(title=f"👤 {title_display}'s Profile", color=0x0099ff)
     embed.set_thumbnail(url=user.avatar.url if user.avatar else user.default_avatar.url)
 
-    # Level and EXP with progress bar
-    exp_percentage = player['exp'] / (player['level'] * 100)
-    exp_bar = create_progress_bar(exp_percentage, 15, "🔹", "▫️")
-    embed.add_field(
-        name="📈 Character Progress",
-        value=f"```yaml\nLevel: {player['level']}\nEXP:   {player['exp']:,}/{player['level'] * 100:,}```\n{exp_bar}",
-        inline=False
-    )
+    # Stats Section
+    player_attack = calculate_player_attack(player)
+    player_defense = calculate_player_defense(player)
+    
+    stats_text = f"{get_emoji('ATK')} **{player_attack:,}** ATK\n"
+    stats_text += f"{get_emoji('DEF')} **{player_defense:,}** DEF\n"
+    stats_text += f"❤️ **{player['hp']:,}/{player['max_hp']:,}** HP"
+    embed.add_field(name="📊 Stats", value=stats_text, inline=True)
 
-    # Health with visual bar
-    hp_percentage = player['hp'] / player['max_hp']
-    hp_bar = create_progress_bar(hp_percentage, 15, "❤️", "🤍")
-    embed.add_field(
-        name="❤️ Health Status",
-        value=f"```diff\n+ HP: {player['hp']}/{player['max_hp']}```\n{hp_bar}",
-        inline=True
-    )
+    # Money Section
+    epic_coins = player.get("epic_coins", 0)
+    money_text = f"{get_emoji('Coins')} **{player['coins']:,}** Coins\n"
+    money_text += f"{get_emoji('Epic_Coin')} **{epic_coins:,}** Epic Coins"
+    embed.add_field(name="💰 Money", value=money_text, inline=True)
 
-    # Wealth display
-    embed.add_field(
-        name="💰 Wealth",
-        value=f"```yaml\nCoins: {player['coins']:,}```",
-        inline=True
-    )
+    # Equipment Section (separate from inventory)
+    weapon = player.get("weapon", "Wooden Sword")
+    armor = player.get("armor")
+    
+    weapon_emoji = get_weapon_emoji(weapon)
+    weapon_enchant = "normie"
+    if weapon in player.get("enchants", {}):
+        enchant_value = player["enchants"][weapon].get("attack", 0)
+        weapon_enchant = get_enchantment_level(enchant_value)
+    
+    equipment_text = f"{weapon_emoji} **{weapon}** ({weapon_enchant})\n"
+    
+    if armor:
+        armor_emoji = get_armor_emoji(armor)
+        armor_enchant = "normie"
+        if armor in player.get("enchants", {}):
+            enchant_value = player["enchants"][armor].get("defense", 0)
+            armor_enchant = get_enchantment_level(enchant_value)
+        equipment_text += f"{armor_emoji} **{armor}** ({armor_enchant})"
+    else:
+        equipment_text += "🛡️ **No Armor** (normie)"
+    
+    embed.add_field(name="⚔️ Equipped", value=equipment_text, inline=True)
 
-    # Location and Equipment
-    embed.add_field(
-        name="🗺️ Location & Gear",
-        value=f"```yaml\nArea:   {player['area']} - {area_name}\nWeapon: {player['weapon']}\nArmor:  {player.get('armor', 'None')}```",
-        inline=False
-    )
-
-    # Time travel info with special styling
+    # Basic Info Section
+    player_rank = get_player_rank(player)
+    max_area_reached = max(player.get("max_area_reached", player["area"]), player["area"])
     tt_count = player.get("time_travels", 0)
+    
+    basic_info = f"**Level:** {player['level']:,}\n"
+    basic_info += f"**EXP:** {player['exp']:,}/{player['level'] * 100:,}\n"
+    basic_info += f"**Area:** {player['area']} - {area_name}\n"
+    basic_info += f"**Max Area:** {max_area_reached}\n"
+    basic_info += f"**Time Travels:** {tt_count}\n"
+    basic_info += f"**Rank:** {player_rank}"
+    embed.add_field(name="ℹ️ Basic Info", value=basic_info, inline=True)
+
+    # Time travel bonuses (only show if player has time travels)
     if tt_count > 0:
         tt_bonuses = calculate_tt_bonuses(tt_count)
-        embed.add_field(
-            name="⏰ Time Mastery",
-            value=f"```css\nTime Travels: {tt_count}\nEXP Bonus:    +{tt_bonuses['exp']}%\nDrop Bonus:   +{tt_bonuses['drops']}%```",
-            inline=True
-        )
+        tt_info = f"**EXP Bonus:** +{tt_bonuses['exp']}%\n"
+        tt_info += f"**Drop Bonus:** +{tt_bonuses['drops']}%\n"
+        tt_info += f"**Working Bonus:** +{tt_bonuses['working']}%"
+        embed.add_field(name="⏰ TT Bonuses", value=tt_info, inline=True)
 
-    # Guild info with enhanced display
+    # Guild info
     if player.get("guild"):
         guild = guild_data.get(player["guild"])
         if guild:
             role = "👑 Owner" if str(user.id) == guild["owner"] else "👤 Member"
-            embed.add_field(
-                name="🏰 Guild Affiliation",
-                value=f"```yaml\nGuild: {guild['name']}\nRole:  {role}\nLevel: {guild['level']}\nRings: {player.get('guild_rings', 0)}```",
-                inline=True
-            )
+            guild_info = f"**Guild:** {guild['name']}\n"
+            guild_info += f"**Role:** {role}\n"
+            guild_info += f"**Level:** {guild['level']}\n"
+            guild_info += f"**Rings:** {player.get('guild_rings', 0)}"
+            embed.add_field(name="🏰 Guild", value=guild_info, inline=True)
 
-    # Achievements section
-    achievements = []
+    # Titles info
     if player.get("titles"):
-        achievements.append(f"🏆 {len(player['titles'])} Titles")
-    if tt_count > 0:
-        achievements.append(f"⏰ Time Traveler")
-    if player["level"] >= 50:
-        achievements.append(f"⭐ Veteran")
-    if player["area"] >= 15:
-        achievements.append(f"🌌 Dragon Slayer")
-
-    if achievements:
-        embed.add_field(
-            name="🎖️ Achievements",
-            value=" • ".join(achievements),
-            inline=False
-        )
-
-    # Add footer with last activity or status
-    embed.set_footer(text=f"Adventuring since {area_name} • Use 'rpg help' for commands")
-    embed.timestamp = discord.utils.utcnow()
+        embed.add_field(name="🏆 Titles", value=f"{len(player['titles'])} unlocked", inline=True)
 
     await ctx.send(embed=embed)
-
 
 @bot.command(name='adventure', aliases=['adv'])
 async def adventure(ctx, mode=None):
@@ -1832,65 +2041,22 @@ async def adventure(ctx, mode=None):
 
     # Monster emoji mapping
     monster_emojis = {
-        "Wolf": "<:Wolf:1385232162588196924>", "Slime": "<:Slime:1385232673139851304>",
-        "Goblin": "<:Goblin:1385231475535904840>",
-        "Nymph": "<:Nymph:1385232894657695855>", "Skeleton": "<:Skeleton:1385232713472016384>",
-        "Zombie": "<:Zombie:1385232073765425183>", "Ghost": "<:Ghost:1385231356237316156>",
-        "Baby Demon": "<:Baby_demon:1385230950895714384>",
-        "Witch": "<:Witch:1385232178186682529>", "Imp": "<:Imp:1385231852016631898>",
-        "Unicorn": "<:Area_5__Unicorn:1385230926174486628>", "Ghoul": "<:Ghoul:1385231367603753011>",
-        "Giant Scorpion": "<:Area_5__Giant_Scorpion:1385230920365379614>",
-        "Sorcerer": "<:Sorcerer:1385232628579434606>", "Baby Robot": "<:Baby_Robot:1385230959615672393>",
-        "Mermaid": "<:Mermaid:1385233248375803994>", "Cecaelia": "<:Cecaelia:1385230992826044538>",
-        "Giant Piranha": "<:Giant_Piranha:1385231440173858876>",
-        "Nereid": "<:Nereid:1385232996520427571>", "Giant Crocodile": "<:Giant_Crocodile:1385231383496232981>",
-        "Killer Robot": "<:Killer_Robot:1385232042173661287>", "Demon": "<:Demon:1385231209348595732>", "Harpy": "🦅",
-        "Manticore": "<:Manticore:1385233266251927602>", "Dullahan": "<:Dullahan:1385231286032924722>",
-        "Scaled Baby Dragon": "<:Scaled_baby_dragon:1385232813933989960>", "Baby Dragon": "🐉",
-        "Young Dragon": "<:Young_dragon:1385232089154060398>",
-        "Kid Dragon": "<:Kid_dragon:1385232021206601829>", "Scaled Kid Dragon": "🐲",
-        "Not so Young Dragon": "<:Not_so_young_dragon:1385232953868681409>",
-        "Teen Dragon": "<:Teen_dragon:1385232584132395059>", "Scaled Teen Dragon": "🐲",
-        "Definitely Not Young Dragon": "<:Definetly_not_young_dragon:1385231194584776865>",
-        "Adult Dragon": "<:Adult_dragon:1385230870981640202>", "Scaled Adult Dragon": "🐲",
-        "Not Young at all Dragon": "<:Not_young_at_all_dragon:1385232936969699359>",
-        "Old Dragon": "🐲", "Scaled Old Dragon": "<:Scaled_Old_Dragon:1385232795265405091>",
-        "How do you dare call this Dragon \"young\"": "<:How_do_you_dare_call_this_dragon:1385231530158461019>",
-        "Ancient Dragon": "<:Ancient_Dragon:1385230881840697476>", "Elder Dragon": "🐉", "Primordial Dragon": "🐲",
+        "Wolf": "<:Wolf:1385232162588196924>", "Slime": "<:Slime:1385232673139851304>", "Goblin": "<:Goblin:1385231475535904840>", "Nymph": "<:Nymph:1385232894657695855>", "Skeleton": "💀",
+        "Zombie": "🧟", "Ghost": "👻", "Baby Demon": "😈", "Witch": "🧙", "Imp": "👺",
+        "Unicorn": "🦄", "Ghoul": "🧟‍♀️", "Giant Scorpion": "🦂", "Sorcerer": "🧙‍♂️", "Baby Robot": "🤖",
+        "Mermaid": "🧜‍♀️", "Cecaelia": "🐙", "Giant Piranha": "🐟", "Nereid": "🧜", "Giant Crocodile": "🐊",
+        "Killer Robot": "🤖", "Demon": "😈", "Harpy": "🦅", "Manticore": "🦁", "Dullahan": "💀",
+        "Scaled Baby Dragon": "🐲", "Baby Dragon": "🐉", "Young Dragon": "🐲", "Kid Dragon": "🐉",
+        "Scaled Kid Dragon": "🐲", "Not so Young Dragon": "🐉", "Teen Dragon": "🐲",
+        "Scaled Teen Dragon": "🐲", "Definitely Not Young Dragon": "🐉", "Adult Dragon": "🐲",
+        "Scaled Adult Dragon": "🐲", "Not Young at all Dragon": "🐉", "Old Dragon": "🐲",
+        "Scaled Old Dragon": "🐲", "How do you dare call this Dragon \"young\"": "🐉",
+        "Ancient Dragon": "🐲", "Elder Dragon": "🐉", "Primordial Dragon": "🐲",
         "Cosmic Dragon": "🌌", "Void Dragon": "⚫", "Reality Dragon": "🌍",
         "Time Dragon": "⏰", "Space Dragon": "🌌", "Dimension Dragon": "🌀",
         "Omega Dragon": "💫", "Alpha Dragon": "⭐", "Genesis Dragon": "✨",
         "Final Dragon": "🔥", "Ultimate Dragon": "⚡", "Supreme Dragon": "👑",
-        "Epic NPC": "🎮", "God of Games": "🎯", "The Creator": "✨",
-        # Adventure-only monsters from Epic RPG wiki
-        "Mutant Water Bottle": "<:Mutant_Water_Bottle:1385233103563522209>",
-        "Giant Spider": "<:Giant_Spider:1385231462885757019>", "Bunch of Bees": "<:Bunch_of_bees:1385230980637528135>",
-        "Ogre": "<:Ogre:1385232875191930910>", "Dark Knight": "<:Dark_Knight:1385231176083574814>",
-        "Hyper Giant Bowl": "<:Hyper_Giant_bowl:1385231696584249464>",
-        "Mutant Shoe": "<:Mutant_Shoe:1385233119832969387>", "Werewolf": "<:Werewolf:1385232210734485634>",
-        "Centaur": "<:Centaur:1385231007166234735>",
-        "Chimera": "<:Chimera:1385231021804617829>",
-        "Hyper Giant Aeronautical Engine": "<:Hyper_Giant_Aeronautical_Engine:1385231569161031721>",
-        "Golem": "<:Golem:1385231499342647386>",
-        "Mammoth": "<:Mammoth:1385233279237754970>", "Mutant Esc Key": "<:Mutant_Esc_Key:1385233217283690586>",
-        "Ent": "<:Ent:1385231301405315123>",
-        "Dinosaur": "<:Dinosaur:1385231268890935428>", "Hyper Giant Door": "<:Hyper_Giant_Door:1385231730427957421>",
-        "Cyclops": "<:Cyclops:1385231143531446302>",
-        "Attack Helicopter": "<:Attack_Helicopter:1385230939076034622>",
-        "Mutant Book": "<:Mutant_Book:1385233152775032934>", "Hydra": "<:Hydra:1385231549733011626>",
-        "Kraken": "<:Kraken:1385232055574597764>", "Hyper Giant Chest": "<:Hyper_Giant_Chest:1385231714779140257>",
-        "Leviathan": "<:Leviathan:1385233305066012744>",
-        "War Tank": "<:War_Tank:1385232229390749797>", "Mutant Backpack": "<:Mutant_Backpack:1385233187105669170>",
-        "Wyrm": "<:Wyrm:1385232124361052210>",
-        "Hyper Giant Toilet": "<:Hyper_Giant_Toilet:1385231764468797462>", "Titan": "<:Titan:1385232413961228288>",
-        "Typhon": "<:Typhon:1385232399100543016>",
-        "Hyper Giant Dragon": "<:Hyper_giant_dragon:1385231748022931476>", "Even More Ancient Dragon": "🐲",
-        "Ancientest Dragon": "<:Ancientest_Dragon:1385230898647007382>",
-        "Another Mutant Dragon Like In Area 11 But Stronger": "<:Another_mutant_dragon_like_in_a1:1385230911313936404>",
-        "Just Purple Dragon": "🟣",
-        "Yes As You Expected Another Hyper Giant Dragon But Op Etc": "🐲",
-        "I Have No More Ideas Dragon": "<:I_have_no_more_ideas_dragon:1385231829107347608>",
-        "Mutantest Dragon": "<:Mutantest_dragon:1385233081425985658>"
+        "Epic NPC": "🎮", "God of Games": "🎯", "The Creator": "✨"
     }
 
     if is_hardmode:
@@ -1971,7 +2137,7 @@ async def adventure(ctx, mode=None):
             # Format drop message like the example (with emoji)
             drop_emoji = {
                 "Wolf Skin": "🐺",
-                "Zombie Eye": "👁️",
+                "Zombie Eye": "👁️", 
                 "Unicorn Horn": "🦄",
                 "Mermaid Hair": "🧜‍♀️",
                 "Chip": "🤖",
@@ -1995,7 +2161,6 @@ async def adventure(ctx, mode=None):
 
     save_player_data()
     await ctx.send(result_message)
-
 
 @bot.command(name='fish')
 async def fish(ctx):
@@ -2022,7 +2187,7 @@ async def fish(ctx):
             # Add emojis for different fish types
             fish_emojis = {
                 "Normie Fish": "🐟",
-                "Golden Fish": "🐠",
+                "Golden Fish": "🐠", 
                 "EPIC Fish": "🌟",
                 "SUPER Fish": "⭐"
             }
@@ -2047,7 +2212,7 @@ async def fish(ctx):
     # Create beautiful result message
     actions = [
         "is fishing in the calm waters! Their line dances in the current",
-        "casts their line with expert precision! The fish are biting today",
+        "casts their line with expert precision! The fish are biting today", 
         "is patiently waiting by the water's edge! Something tugs at the line",
         "is fishing like a true master! The water ripples with activity"
     ]
@@ -2067,7 +2232,6 @@ async def fish(ctx):
 
     save_player_data()
     await ctx.send(result_message)
-
 
 @bot.command(name='chop')
 async def chop(ctx):
@@ -2133,7 +2297,7 @@ async def chop(ctx):
             # Add emojis for different log types
             log_emojis = {
                 "Wooden Log": "🪵",
-                "Epic Log": "📜",
+                "Epic Log": "📜", 
                 "Super Log": "🟫",
                 "Mega Log": "🟤",
                 "HYPER Log": "🟨",
@@ -2149,7 +2313,7 @@ async def chop(ctx):
     # Create beautiful result message
     actions = [
         "is chopping with their **AXE**! The sound of wood echoes through the forest",
-        "swings their **AXE** with precision! Wood chips fly everywhere",
+        "swings their **AXE** with precision! Wood chips fly everywhere", 
         "is working hard in the forest! Their axe gleams in the sunlight",
         "chops wood like a true lumberjack! The trees don't stand a chance"
     ]
@@ -2169,7 +2333,6 @@ async def chop(ctx):
 
     save_player_data()
     await ctx.send(result_message)
-
 
 @bot.command(name='cooldowns', aliases=['cooldown', 'cd', 'cds'])
 async def cooldowns(ctx, user: discord.User = None):
@@ -2202,7 +2365,6 @@ async def cooldowns(ctx, user: discord.User = None):
     embed.add_field(name="Cooldowns", value=cooldowns_text, inline=False)
     await ctx.send(embed=embed)
 
-
 @bot.command(name='ready', aliases=['rd'])
 async def ready(ctx, user: discord.User = None):
     if user is None:
@@ -2232,7 +2394,6 @@ async def ready(ctx, user: discord.User = None):
 
     embed.add_field(name="Ready Commands", value=ready_text, inline=False)
     await ctx.send(embed=embed)
-
 
 @bot.command(name='daily')
 async def daily(ctx):
@@ -2296,6 +2457,135 @@ async def daily(ctx):
     save_player_data()
     await ctx.send(embed=embed)
 
+@bot.command(name='equip')
+async def equip(ctx, *, item_name=None):
+    """Equip a weapon or armor from inventory"""
+    if not item_name:
+        await ctx.send("Please specify an item to equip! Example: `rpgs equip wooden sword`")
+        return
+
+    player = get_player(ctx.author.id)
+    if player is None:
+        await ctx.send("🎮 Welcome to disRPG! Please use `rpgs start` to create your adventure account first!")
+        return
+
+    # Find item in inventory
+    item_found = None
+    for item in player["inventory"]:
+        if item.lower() == item_name.lower():
+            item_found = item
+            break
+
+    if not item_found or player["inventory"][item_found] <= 0:
+        await ctx.send("You don't have this item in your inventory!")
+        return
+
+    # Check if item is a weapon or armor
+    is_weapon = (item_found in WEAPONS or 
+                any(item_found == name for name in CRAFT_RECIPES if CRAFT_RECIPES[name]["type"] == "weapon") or
+                any(item_found == name for name in FORGE_RECIPES if FORGE_RECIPES[name]["type"] == "weapon") or
+                any(item_found == name for name in VOID_FORGE_RECIPES if VOID_FORGE_RECIPES[name]["type"] == "weapon"))
+    
+    is_armor = (any(item_found == name for name in CRAFT_RECIPES if CRAFT_RECIPES[name]["type"] == "armor") or
+               any(item_found == name for name in FORGE_RECIPES if FORGE_RECIPES[name]["type"] == "armor") or
+               any(item_found == name for name in VOID_FORGE_RECIPES if VOID_FORGE_RECIPES[name]["type"] == "armor"))
+
+    if not (is_weapon or is_armor):
+        await ctx.send("You can only equip weapons and armor!")
+        return
+
+    # Remove from inventory
+    player["inventory"][item_found] -= 1
+    if player["inventory"][item_found] <= 0:
+        del player["inventory"][item_found]
+
+    embed = discord.Embed(title="⚔️ Equipment Changed", color=0x00ff00)
+
+    if is_weapon:
+        # Unequip current weapon and add to inventory
+        old_weapon = player.get("weapon", "Wooden Sword")
+        if old_weapon != "Wooden Sword":  # Don't add starting weapon to inventory
+            if old_weapon not in player["inventory"]:
+                player["inventory"][old_weapon] = 0
+            player["inventory"][old_weapon] += 1
+        
+        player["weapon"] = item_found
+        
+        embed.add_field(name="Weapon Equipped", value=f"{get_weapon_emoji(item_found)} **{item_found}**", inline=True)
+        if old_weapon != "Wooden Sword":
+            embed.add_field(name="Previous Weapon", value=f"Moved {old_weapon} to inventory", inline=True)
+    
+    elif is_armor:
+        # Unequip current armor and add to inventory
+        old_armor = player.get("armor")
+        if old_armor:
+            if old_armor not in player["inventory"]:
+                player["inventory"][old_armor] = 0
+            player["inventory"][old_armor] += 1
+        
+        player["armor"] = item_found
+        
+        embed.add_field(name="Armor Equipped", value=f"{get_armor_emoji(item_found)} **{item_found}**", inline=True)
+        if old_armor:
+            embed.add_field(name="Previous Armor", value=f"Moved {old_armor} to inventory", inline=True)
+
+    save_player_data()
+    await ctx.send(embed=embed)
+
+@bot.command(name='unequip')
+async def unequip(ctx, equipment_type=None):
+    """Unequip weapon or armor"""
+    if not equipment_type:
+        await ctx.send("Please specify 'weapon' or 'armor' to unequip!")
+        return
+
+    player = get_player(ctx.author.id)
+    if player is None:
+        await ctx.send("🎮 Welcome to disRPG! Please use `rpgs start` to create your adventure account first!")
+        return
+
+    embed = discord.Embed(title="⚔️ Equipment Removed", color=0xff6600)
+
+    if equipment_type.lower() in ['weapon', 'w', 'sword']:
+        current_weapon = player.get("weapon", "Wooden Sword")
+        if current_weapon == "Wooden Sword":
+            await ctx.send("You can't unequip your starting weapon!")
+            return
+        
+        # Add to inventory
+        if current_weapon not in player["inventory"]:
+            player["inventory"][current_weapon] = 0
+        player["inventory"][current_weapon] += 1
+        
+        # Set to default weapon
+        player["weapon"] = "Wooden Sword"
+        
+        embed.add_field(name="Weapon Unequipped", value=f"Moved {current_weapon} to inventory", inline=True)
+        embed.add_field(name="Current Weapon", value="Wooden Sword (default)", inline=True)
+    
+    elif equipment_type.lower() in ['armor', 'a']:
+        current_armor = player.get("armor")
+        if not current_armor:
+            await ctx.send("You don't have any armor equipped!")
+            return
+        
+        # Add to inventory
+        if current_armor not in player["inventory"]:
+            player["inventory"][current_armor] = 0
+        player["inventory"][current_armor] += 1
+        
+        # Remove armor
+        player["armor"] = None
+        
+        embed.add_field(name="Armor Unequipped", value=f"Moved {current_armor} to inventory", inline=True)
+        embed.add_field(name="Current Armor", value="None", inline=True)
+    
+    else:
+        await ctx.send("Please specify 'weapon' or 'armor' to unequip!")
+        return
+
+    save_player_data()
+    await ctx.send(embed=embed)
 
 @bot.command(name='sell')
 async def sell(ctx, *, item_name=None):
@@ -2334,7 +2624,6 @@ async def sell(ctx, *, item_name=None):
     save_player_data()
     await ctx.send(embed=embed)
 
-
 @bot.command(name='craft')
 async def craft_item(ctx, *, item_name=None):
     if not item_name:
@@ -2367,6 +2656,14 @@ async def craft_item(ctx, *, item_name=None):
         return
     if recipe["type"] == "armor" and player["armor"] == recipe_name:
         await ctx.send("You cannot craft equipment you currently have equipped!")
+        return
+
+    # Check carrying limits
+    if recipe["type"] == "weapon" and player.get("weapon") and player["weapon"] != "Wooden Sword":
+        await ctx.send("You can't carry more than 1 sword at once! Sell your current one with `rpgs sell sword`")
+        return
+    if recipe["type"] == "armor" and player.get("armor"):
+        await ctx.send("You can't carry more than 1 armor at once! Sell your current one with `rpgs sell armor`")
         return
 
     # Check materials
@@ -2425,7 +2722,6 @@ async def craft_item(ctx, *, item_name=None):
     save_player_data()
     await ctx.send(embed=embed)
 
-
 @bot.command(name='forge')
 async def forge_item(ctx, *, item_name=None):
     if not item_name:
@@ -2464,6 +2760,14 @@ async def forge_item(ctx, *, item_name=None):
         await ctx.send(f"You need {recipe['hp_req']} HP to forge {recipe_name}!")
         return
 
+    # Check carrying limits
+    if recipe["type"] == "weapon" and player.get("weapon") and player["weapon"] != "Wooden Sword":
+        await ctx.send("You can't carry more than 1 sword at once! Sell your current one with `rpgs sell sword`")
+        return
+    if recipe["type"] == "armor" and player.get("armor"):
+        await ctx.send("You can't carry more than 1 armor at once! Sell your current one with `rpgs sell armor`")
+        return
+
     # Check materials
     missing_materials = []
     for material, needed in recipe["materials"].items():
@@ -2492,7 +2796,6 @@ async def forge_item(ctx, *, item_name=None):
 
     save_player_data()
     await ctx.send(embed=embed)
-
 
 @bot.command(name='voidforge')
 async def void_forge_item(ctx, *, item_name=None):
@@ -2528,6 +2831,14 @@ async def void_forge_item(ctx, *, item_name=None):
         await ctx.send(f"You need {recipe['time_travel_req']} Time Travels to forge {recipe_name}!")
         return
 
+    # Check carrying limits
+    if recipe["type"] == "weapon" and player.get("weapon") and player["weapon"] != "Wooden Sword":
+        await ctx.send("You can't carry more than 1 sword at once! Sell your current one with `rpgs sell sword`")
+        return
+    if recipe["type"] == "armor" and player.get("armor"):
+        await ctx.send("You can't carry more than 1 armor at once! Sell your current one with `rpgs sell armor`")
+        return
+
     # Check materials and coin cost
     missing_materials = []
     for material, needed in recipe["materials"].items():
@@ -2561,7 +2872,6 @@ async def void_forge_item(ctx, *, item_name=None):
 
     save_player_data()
     await ctx.send(embed=embed)
-
 
 @bot.command(name='dismantle')
 async def dismantle_item(ctx, item_name=None, amount=1):
@@ -2610,7 +2920,6 @@ async def dismantle_item(ctx, item_name=None, amount=1):
 
     save_player_data()
     await ctx.send(embed=embed)
-
 
 @bot.command(name='cook')
 async def cook_item(ctx, *, item_name=None):
@@ -2662,7 +2971,6 @@ async def cook_item(ctx, *, item_name=None):
     save_player_data()
     await ctx.send(embed=embed)
 
-
 @bot.command(name='recipes')
 async def recipes(ctx, category=None):
     if category == "forge":
@@ -2704,41 +3012,69 @@ async def recipes(ctx, category=None):
             recipe_text += f"ATK: {data['attack']} | DEF: {data['defense']}\n"
             recipe_text += f"Materials: {materials}\n\n"
         embed.add_field(name="Available Recipes", value=recipe_text[:1024], inline=False)
-        embed.add_field(name="Other Categories",
-                        value="`rpg recipes forge` - Forge recipes\n`rpg recipes void` - Void forge recipes\n`rpg recipes cook` - Cooking recipes",
-                        inline=False)
+        embed.add_field(name="Other Categories", value="`rpg recipes forge` - Forge recipes\n`rpg recipes void` - Void forge recipes\n`rpg recipes cook` - Cooking recipes", inline=False)
 
     await ctx.send(embed=embed)
 
+def find_equipment_item(player, item_query):
+    """Find equipment item based on query (supports 's', 'sword', 'a', 'armor' shortcuts)"""
+    if not item_query:
+        return None, "Please specify an item to enchant!"
+    
+    # Handle shortcuts
+    if item_query.lower() in ['s', 'sword']:
+        # Find equipped weapon
+        weapon = player.get("weapon")
+        if weapon and weapon in player["inventory"] and player["inventory"][weapon] > 0:
+            return weapon, None
+        else:
+            return None, "You don't have a weapon equipped or in inventory!"
+    
+    elif item_query.lower() in ['a', 'armor']:
+        # Find equipped armor
+        armor = player.get("armor")
+        if armor and armor in player["inventory"] and player["inventory"][armor] > 0:
+            return armor, None
+        else:
+            return None, "You don't have armor equipped or in inventory!"
+    
+    # Handle full item name
+    for item in player["inventory"]:
+        if item.lower() == item_query.lower():
+            if player["inventory"][item] > 0:
+                return item, None
+            else:
+                return None, "You don't have this item!"
+    
+    return None, "Item not found in inventory!"
 
 @bot.command(name='enchant')
 async def enchant(ctx, *, item_name=None):
     player = get_player(ctx.author.id)
 
-    max_area = player.get("max_area_reached", player["area"])
-    if not check_command_unlocked(player["area"], "enchant", max_area):
+    if not check_command_unlocked(player["area"], "enchant"):
         await ctx.send("🔒 Enchanting is unlocked in Area 2!")
         return
 
     if not item_name:
-        await ctx.send("Please specify an item to enchant! Example: `rpg enchant Wooden Sword`")
+        await ctx.send("Please specify an item to enchant! Example: `rpgs enchant s` (sword) or `rpgs enchant a` (armor)")
         return
 
-    # Find item in inventory
-    item_found = None
-    for item in player["inventory"]:
-        if item.lower() == item_name.lower():
-            item_found = item
-            break
-
-    if not item_found or player["inventory"][item_found] <= 0:
-        await ctx.send("You don't have this item!")
+    # Find item using the new function
+    item_found, error = find_equipment_item(player, item_name)
+    if not item_found:
+        await ctx.send(error)
         return
 
     # Check if item is a weapon or armor
-    is_weapon = item_found in WEAPONS or any(
-        item_found == name for name in CRAFT_RECIPES if CRAFT_RECIPES[name]["type"] == "weapon")
-    is_armor = any(item_found == name for name in CRAFT_RECIPES if CRAFT_RECIPES[name]["type"] == "armor")
+    is_weapon = (item_found in WEAPONS or 
+                any(item_found == name for name in CRAFT_RECIPES if CRAFT_RECIPES[name]["type"] == "weapon") or
+                any(item_found == name for name in FORGE_RECIPES if FORGE_RECIPES[name]["type"] == "weapon") or
+                any(item_found == name for name in VOID_FORGE_RECIPES if VOID_FORGE_RECIPES[name]["type"] == "weapon"))
+    
+    is_armor = (any(item_found == name for name in CRAFT_RECIPES if CRAFT_RECIPES[name]["type"] == "armor") or
+               any(item_found == name for name in FORGE_RECIPES if FORGE_RECIPES[name]["type"] == "armor") or
+               any(item_found == name for name in VOID_FORGE_RECIPES if VOID_FORGE_RECIPES[name]["type"] == "armor"))
 
     if not (is_weapon or is_armor):
         await ctx.send("You can only enchant weapons and armor!")
@@ -2773,13 +3109,194 @@ async def enchant(ctx, *, item_name=None):
     save_player_data()
     await ctx.send(embed=embed)
 
+@bot.command(name='refine')
+async def refine(ctx, *, item_name=None):
+    player = get_player(ctx.author.id)
+
+    if not check_command_unlocked(player["area"], "refine"):
+        await ctx.send("🔒 Refining is unlocked in Area 7!")
+        return
+
+    if not item_name:
+        await ctx.send("Please specify an item to refine! Example: `rpgs refine s` (sword) or `rpgs refine a` (armor)")
+        return
+
+    # Find item using the new function
+    item_found, error = find_equipment_item(player, item_name)
+    if not item_found:
+        await ctx.send(error)
+        return
+
+    # Check if item is a weapon or armor
+    is_weapon = (item_found in WEAPONS or 
+                any(item_found == name for name in CRAFT_RECIPES if CRAFT_RECIPES[name]["type"] == "weapon") or
+                any(item_found == name for name in FORGE_RECIPES if FORGE_RECIPES[name]["type"] == "weapon") or
+                any(item_found == name for name in VOID_FORGE_RECIPES if VOID_FORGE_RECIPES[name]["type"] == "weapon"))
+    
+    is_armor = (any(item_found == name for name in CRAFT_RECIPES if CRAFT_RECIPES[name]["type"] == "armor") or
+               any(item_found == name for name in FORGE_RECIPES if FORGE_RECIPES[name]["type"] == "armor") or
+               any(item_found == name for name in VOID_FORGE_RECIPES if VOID_FORGE_RECIPES[name]["type"] == "armor"))
+
+    if not (is_weapon or is_armor):
+        await ctx.send("You can only refine weapons and armor!")
+        return
+
+    refine_cost = player["level"] * 500
+    if player["coins"] < refine_cost:
+        await ctx.send(f"You need {refine_cost} coins to refine this item!")
+        return
+
+    player["coins"] -= refine_cost
+
+    # Apply refinement (better than enchant)
+    if item_found not in player["enchants"]:
+        player["enchants"][item_found] = {"attack": 0, "defense": 0}
+
+    if is_weapon:
+        refine_bonus = random.randint(3, 10) + (player["area"] // 2)
+        player["enchants"][item_found]["attack"] += refine_bonus
+        embed = discord.Embed(title="🔥 Refinement Success!", color=0xff6600)
+        embed.add_field(name="Item", value=item_found, inline=True)
+        embed.add_field(name="Attack Bonus", value=f"+{refine_bonus}", inline=True)
+    else:
+        refine_bonus = random.randint(3, 10) + (player["area"] // 2)
+        player["enchants"][item_found]["defense"] += refine_bonus
+        embed = discord.Embed(title="🔥 Refinement Success!", color=0xff6600)
+        embed.add_field(name="Item", value=item_found, inline=True)
+        embed.add_field(name="Defense Bonus", value=f"+{refine_bonus}", inline=True)
+
+    embed.add_field(name="Cost", value=f"{refine_cost} coins", inline=True)
+
+    save_player_data()
+    await ctx.send(embed=embed)
+
+@bot.command(name='transmute')
+async def transmute(ctx, *, item_name=None):
+    player = get_player(ctx.author.id)
+
+    if not check_command_unlocked(player["area"], "transmute"):
+        await ctx.send("🔒 Transmuting is unlocked in Area 13!")
+        return
+
+    if not item_name:
+        await ctx.send("Please specify an item to transmute! Example: `rpgs transmute s` (sword) or `rpgs transmute a` (armor)")
+        return
+
+    # Find item using the new function
+    item_found, error = find_equipment_item(player, item_name)
+    if not item_found:
+        await ctx.send(error)
+        return
+
+    # Check if item is a weapon or armor
+    is_weapon = (item_found in WEAPONS or 
+                any(item_found == name for name in CRAFT_RECIPES if CRAFT_RECIPES[name]["type"] == "weapon") or
+                any(item_found == name for name in FORGE_RECIPES if FORGE_RECIPES[name]["type"] == "weapon") or
+                any(item_found == name for name in VOID_FORGE_RECIPES if VOID_FORGE_RECIPES[name]["type"] == "weapon"))
+    
+    is_armor = (any(item_found == name for name in CRAFT_RECIPES if CRAFT_RECIPES[name]["type"] == "armor") or
+               any(item_found == name for name in FORGE_RECIPES if FORGE_RECIPES[name]["type"] == "armor") or
+               any(item_found == name for name in VOID_FORGE_RECIPES if VOID_FORGE_RECIPES[name]["type"] == "armor"))
+
+    if not (is_weapon or is_armor):
+        await ctx.send("You can only transmute weapons and armor!")
+        return
+
+    transmute_cost = player["level"] * 2500
+    if player["coins"] < transmute_cost:
+        await ctx.send(f"You need {transmute_cost} coins to transmute this item!")
+        return
+
+    player["coins"] -= transmute_cost
+
+    # Apply transmutation (even better than refine)
+    if item_found not in player["enchants"]:
+        player["enchants"][item_found] = {"attack": 0, "defense": 0}
+
+    if is_weapon:
+        transmute_bonus = random.randint(10, 25) + (player["area"] // 2)
+        player["enchants"][item_found]["attack"] += transmute_bonus
+        embed = discord.Embed(title="🌌 Transmutation Success!", color=0x4b0082)
+        embed.add_field(name="Item", value=item_found, inline=True)
+        embed.add_field(name="Attack Bonus", value=f"+{transmute_bonus}", inline=True)
+    else:
+        transmute_bonus = random.randint(10, 25) + (player["area"] // 2)
+        player["enchants"][item_found]["defense"] += transmute_bonus
+        embed = discord.Embed(title="🌌 Transmutation Success!", color=0x4b0082)
+        embed.add_field(name="Item", value=item_found, inline=True)
+        embed.add_field(name="Defense Bonus", value=f"+{transmute_bonus}", inline=True)
+
+    embed.add_field(name="Cost", value=f"{transmute_cost} coins", inline=True)
+
+    save_player_data()
+    await ctx.send(embed=embed)
+
+@bot.command(name='transcend')
+async def transcend(ctx, *, item_name=None):
+    player = get_player(ctx.author.id)
+
+    if not check_command_unlocked(player["area"], "transcend"):
+        await ctx.send("🔒 Transcending is unlocked in Area 15!")
+        return
+
+    if not item_name:
+        await ctx.send("Please specify an item to transcend! Example: `rpgs transcend s` (sword) or `rpgs transcend a` (armor)")
+        return
+
+    # Find item using the new function
+    item_found, error = find_equipment_item(player, item_name)
+    if not item_found:
+        await ctx.send(error)
+        return
+
+    # Check if item is a weapon or armor
+    is_weapon = (item_found in WEAPONS or 
+                any(item_found == name for name in CRAFT_RECIPES if CRAFT_RECIPES[name]["type"] == "weapon") or
+                any(item_found == name for name in FORGE_RECIPES if FORGE_RECIPES[name]["type"] == "weapon") or
+                any(item_found == name for name in VOID_FORGE_RECIPES if VOID_FORGE_RECIPES[name]["type"] == "weapon"))
+    
+    is_armor = (any(item_found == name for name in CRAFT_RECIPES if CRAFT_RECIPES[name]["type"] == "armor") or
+               any(item_found == name for name in FORGE_RECIPES if FORGE_RECIPES[name]["type"] == "armor") or
+               any(item_found == name for name in VOID_FORGE_RECIPES if VOID_FORGE_RECIPES[name]["type"] == "armor"))
+
+    if not (is_weapon or is_armor):
+        await ctx.send("You can only transcend weapons and armor!")
+        return
+
+    transcend_cost = player["level"] * 10000
+    if player["coins"] < transcend_cost:
+        await ctx.send(f"You need {transcend_cost} coins to transcend this item!")
+        return
+
+    player["coins"] -= transcend_cost
+
+    # Apply transcendence (highest tier enhancement)
+    if item_found not in player["enchants"]:
+        player["enchants"][item_found] = {"attack": 0, "defense": 0}
+
+    if is_weapon:
+        transcend_bonus = random.randint(25, 50) + (player["area"] // 2)
+        player["enchants"][item_found]["attack"] += transcend_bonus
+        embed = discord.Embed(title="⭐ Transcendence Success!", color=0xffd700)
+        embed.add_field(name="Item", value=item_found, inline=True)
+        embed.add_field(name="Attack Bonus", value=f"+{transcend_bonus}", inline=True)
+    else:
+        transcend_bonus = random.randint(25, 50) + (player["area"] // 2)
+        player["enchants"][item_found]["defense"] += transcend_bonus
+        embed = discord.Embed(title="⭐ Transcendence Success!", color=0xffd700)
+        embed.add_field(name="Item", value=item_found, inline=True)
+        embed.add_field(name="Defense Bonus", value=f"+{transcend_bonus}", inline=True)
+
+    embed.add_field(name="Cost", value=f"{transcend_cost} coins", inline=True)
+
+    save_player_data()
+    await ctx.send(embed=embed)
 
 @bot.command(name='training')
 async def training(ctx):
     player = get_player(ctx.author.id)
 
-    max_area = player.get("max_area_reached", player["area"])
-    if not check_command_unlocked(player["area"], "training", max_area):
+    if not check_command_unlocked(player["area"], "training"):
         await ctx.send("🔒 Training is unlocked in Area 2!")
         return
 
@@ -2803,13 +3320,11 @@ async def training(ctx):
     save_player_data()
     await ctx.send(embed=embed)
 
-
 @bot.command(name='axe')
 async def axe(ctx):
     player = get_player(ctx.author.id)
 
-    max_area = player.get("max_area_reached", player["area"])
-    if not check_command_unlocked(player["area"], "axe", max_area):
+    if not check_command_unlocked(player["area"], "axe"):
         await ctx.send("🔒 Axe is unlocked in Area 3!")
         return
 
@@ -2820,7 +3335,7 @@ async def axe(ctx):
     # Axe amounts: Wooden Log 3-6, Epic Log 2-3, Super Log 2, others same as chop
     axe_multipliers = {
         "Wooden Log": [3, 6],
-        "Epic Log": [2, 3],
+        "Epic Log": [2, 3], 
         "Super Log": [2, 2],
         "Mega Log": [1, 1],
         "HYPER Log": [1, 1],
@@ -2893,7 +3408,6 @@ async def axe(ctx):
     save_player_data()
     await ctx.send(embed=embed)
 
-
 @bot.command(name='net')
 async def net(ctx):
     player = get_player(ctx.author.id)
@@ -2962,8 +3476,7 @@ async def net(ctx):
     save_player_data()
     await ctx.send(embed=embed)
 
-
-@bot.command(name='help', aliases=['helps'])
+@bot.command(name='helps', aliases=['helper'])
 async def help_command(ctx, category=None):
     """Beautiful comprehensive help system with categories"""
     player = get_player(ctx.author.id)
@@ -2974,8 +3487,7 @@ async def help_command(ctx, category=None):
             description="**The Ultimate Discord RPG Experience**\n\nEmbark on an epic adventure through 21 areas, battle mighty dragons, craft legendary equipment, and become the ultimate hero!",
             color=0x00ff88
         )
-        embed.set_thumbnail(
-            url="https://cdn.discordapp.com/emojis/1234567890123456789.png")  # You can replace with actual emoji URL
+        embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1234567890123456789.png")  # You can replace with actual emoji URL
         embed.add_field(
             name="🚀 **Get Started**",
             value="```\nrpgs start  or  /start\n```\nCreate your adventure account and begin your journey!",
@@ -3051,7 +3563,9 @@ async def help_command(ctx, category=None):
         commands = [
             ("👤 **profile** `[user]`", "View detailed character profile"),
             ("📊 **stats**", "Quick view of your character stats"),
-            ("🎒 **inventory**", "View your items and materials"),
+            ("🎒 **inventory**", "View your items and materials (categorized)"),
+            ("⚔️ **equip** `<item>`", "Equip weapon or armor from inventory"),
+            ("🛡️ **unequip** `<type>`", "Unequip weapon or armor"),
             ("🏆 **leaderboard** `[type]`", "View top players (level, coins, tt)"),
             ("🔥 **cooldowns**", "Check command cooldowns"),
             ("✅ **ready**", "See which commands are ready"),
@@ -3251,8 +3765,7 @@ async def guild_command(ctx, action=None, *, target=None):
                         role = "👑 Owner" if member_id == guild["owner"] else "👤 Member"
                         members_list.append(f"{role} Unknown User")
 
-                embed.add_field(name="Members List", value="\n".join(members_list) if members_list else "No members",
-                                inline=False)
+                embed.add_field(name="Members List", value="\n".join(members_list) if members_list else "No members", inline=False)
                 embed.add_field(name="Your Guild Rings", value=player["guild_rings"], inline=True)
 
                 await ctx.send(embed=embed)
@@ -3261,12 +3774,12 @@ async def guild_command(ctx, action=None, *, target=None):
                 await ctx.send("Your guild no longer exists!")
         else:
             embed = discord.Embed(title="🏰 Guild System", description="You are not in a guild", color=0x9932cc)
-            embed.add_field(name="Available Commands",
-                            value="`rpg guild create <name>` - Create a guild\n`rpg guild join <name>` - Join a guild\n`rpg guild list` - List all guilds",
-                            inline=False)
-            embed.add_field(name="Guild Benefits",
-                            value="• 2% extra XP and coins per guild level in duels\n• Weekly rewards based on energy ranking\n• Access to guild shop with exclusive items",
-                            inline=False)
+            embed.add_field(name="Available Commands", 
+                           value="`rpg guild create <name>` - Create a guild\n`rpg guild join <name>` - Join a guild\n`rpg guild list` - List all guilds", 
+                           inline=False)
+            embed.add_field(name="Guild Benefits", 
+                           value="• 2% extra XP and coins per guild level in duels\n• Weekly rewards based on energy ranking\n• Access to guild shop with exclusive items", 
+                           inline=False)
             await ctx.send(embed=embed)
 
     elif action == "create":
@@ -3658,7 +4171,7 @@ async def guild_command(ctx, action=None, *, target=None):
         sorted_guilds = sorted(guild_data.items(), key=lambda x: x[1]["level"], reverse=True)
 
         for i, (guild_id, guild) in enumerate(sorted_guilds[:10]):
-            guild_list += f"{i + 1}. **{guild['name']}** (Level {guild['level']})\n"
+            guild_list += f"{i+1}. **{guild['name']}** (Level {guild['level']})\n"
             guild_list += f"   Members: {len(guild['members'])}/10 | Energy: {guild['energy']}\n\n"
 
         embed.add_field(name="Top Guilds", value=guild_list if guild_list else "No guilds found", inline=False)
@@ -3668,7 +4181,6 @@ async def guild_command(ctx, action=None, *, target=None):
 
     else:
         await ctx.send("Invalid guild action! Use `rpg guild` to see available commands.")
-
 
 @bot.command(name='titles')
 async def titles_command(ctx, action=None, *, title_name=None):
@@ -3736,12 +4248,11 @@ async def titles_command(ctx, action=None, *, title_name=None):
         if next_title_tt:
             embed.add_field(name="Next Title", value=f"**{next_title}** (Time Travel {next_title_tt})", inline=False)
 
-        embed.add_field(name="Commands",
-                        value="`rpg titles set <title>` - Set active title\n`rpg titles remove` - Remove active title",
-                        inline=False)
+        embed.add_field(name="Commands", 
+                       value="`rpg titles set <title>` - Set active title\n`rpg titles remove` - Remove active title", 
+                       inline=False)
 
         await ctx.send(embed=embed)
-
 
 # Lootbox rewards system
 LOOTBOX_REWARDS = {
@@ -3803,7 +4314,6 @@ LOOTBOX_REWARDS = {
     }
 }
 
-
 @bot.command(name='open')
 async def open_lootbox(ctx, *, lootbox_name=None, amount=1):
     """Open lootboxes from inventory"""
@@ -3832,7 +4342,7 @@ async def open_lootbox(ctx, *, lootbox_name=None, amount=1):
     # Find lootbox in inventory (check aliases)
     lootbox_aliases = {
         "c lb": "common lootbox",
-        "u lb": "uncommon lootbox",
+        "u lb": "uncommon lootbox", 
         "r lb": "rare lootbox",
         "ep lb": "EPIC lootbox",
         "ed lb": "EDGY lootbox",
@@ -3900,12 +4410,10 @@ async def open_lootbox(ctx, *, lootbox_name=None, amount=1):
 
     # Check for lootbox event (small chance)
     if amount == 1 and random.random() * 100 < 1:
-        embed.add_field(name="🎊 Lootbox Event!", value="The lootbox got stuck and triggered a special event!",
-                        inline=False)
+        embed.add_field(name="🎊 Lootbox Event!", value="The lootbox got stuck and triggered a special event!", inline=False)
 
     save_player_data()
     await ctx.send(embed=embed)
-
 
 def open_single_lootbox(player, lootbox_name):
     """Open a single lootbox and return rewards"""
@@ -3943,8 +4451,8 @@ def open_single_lootbox(player, lootbox_name):
             item = random.choice(item_pool)
 
             # Check area restrictions (except for logs and fish)
-            if item not in ["Wooden Log", "Epic Log", "Super Log", "Mega Log", "HYPER Log", "ULTRA Log", "ULTIMATE Log",
-                            "Normie Fish", "Golden Fish", "EPIC Fish", "SUPER Fish"]:
+            if item not in ["Wooden Log", "Epic Log", "Super Log", "Mega Log", "HYPER Log", "ULTRA Log", "ULTIMATE Log", 
+                          "Normie Fish", "Golden Fish", "EPIC Fish", "SUPER Fish"]:
                 # Simple area check for other items - only skip if area requirement not met
                 skip_item = False
                 if "Apple" in item and max_area < 3:
@@ -3972,7 +4480,6 @@ def open_single_lootbox(player, lootbox_name):
             rewards["items"].append(item)
 
     return rewards
-
 
 @bot.command(name='use')
 async def use_item(ctx, *, item_name=None):
@@ -4019,7 +4526,6 @@ async def use_item(ctx, *, item_name=None):
 
     else:
         await ctx.send("Unknown item or item cannot be used!")
-
 
 @bot.command(name='title')
 async def title_command(ctx, action=None, *, title_name=None):
@@ -4087,9 +4593,9 @@ async def title_command(ctx, action=None, *, title_name=None):
         if next_title_tt:
             embed.add_field(name="Next Title", value=f"**{next_title}** (Time Travel {next_title_tt})", inline=False)
 
-        embed.add_field(name="Commands",
-                        value="`rpgs title use <title>` - Set active title\n`rpgs title remove` - Remove active title",
-                        inline=False)
+        embed.add_field(name="Commands", 
+                       value="`rpgs title use <title>` - Set active title\n`rpgs title remove` - Remove active title", 
+                       inline=False)
 
         await ctx.send(embed=embed)
     else:
@@ -4100,25 +4606,147 @@ async def title_command(ctx, action=None, *, title_name=None):
         embed.add_field(name="Current Title", value=current_title, inline=True)
         embed.add_field(name="Titles Owned", value=len(player.get("titles", [])), inline=True)
 
-        embed.add_field(name="Commands",
-                        value="`rpgs title list` - View your titles\n`rpgs title use <title>` - Set active title\n`rpgs title remove` - Remove active title",
-                        inline=False)
+        embed.add_field(name="Commands", 
+                       value="`rpgs title list` - View your titles\n`rpgs title use <title>` - Set active title\n`rpgs title remove` - Remove active title", 
+                       inline=False)
 
         await ctx.send(embed=embed)
-
 
 # Gambling system
 def calculate_coin_cap(time_travels, max_area):
     """Calculate coin cap for multidice and give commands"""
     return 500000000 * (time_travels ** 4) + 100000 * (max_area ** 2)
 
+# Blackjack Views
+class BlackjackView(View):
+    def __init__(self, player_id, bet, player_cards, dealer_cards):
+        super().__init__(timeout=60)
+        self.player_id = player_id
+        self.bet = bet
+        self.player_cards = player_cards
+        self.dealer_cards = dealer_cards
+        self.game_over = False
+
+    def card_value(self):
+        return random.randint(1, 11)
+
+    def calculate_total(self, cards):
+        total = sum(cards)
+        # Simple ace handling - if over 21 and has 11, convert to 1
+        while total > 21 and 11 in cards:
+            cards[cards.index(11)] = 1
+            total = sum(cards)
+        return total
+
+    @discord.ui.button(label='Hit', style=discord.ButtonStyle.green, emoji='🎯')
+    async def hit_button(self, interaction: discord.Interaction, button: Button):
+        if interaction.user.id != self.player_id or self.game_over:
+            await interaction.response.send_message("This isn't your game!", ephemeral=True)
+            return
+
+        # Add card to player
+        self.player_cards.append(self.card_value())
+        player_total = self.calculate_total(self.player_cards.copy())
+
+        player = get_player(self.player_id)
+
+        embed = discord.Embed(title=f"{get_emoji('EPIC_RPG')} Blackjack", color=0x000000)
+        embed.add_field(name="Your Cards", value=f"{self.player_cards} = **{player_total}**", inline=True)
+        embed.add_field(name="Dealer Cards", value=f"[{self.dealer_cards[0]}, ?] = **{self.dealer_cards[0]} + ?**", inline=True)
+
+        if player_total > 21:
+            # Bust
+            self.game_over = True
+            player["coins"] -= self.bet
+
+            embed.add_field(name="Result", value=f"{get_emoji('Zombie_eye')} **BUST!** You went over 21!", inline=False)
+            embed.add_field(name="Loss", value=f"-{self.bet:,} {get_emoji('Coins')}", inline=True)
+            embed.add_field(name="Balance", value=f"{player['coins']:,} {get_emoji('Coins')}", inline=True)
+
+            # Disable all buttons
+            for item in self.children:
+                item.disabled = True
+
+            save_player_data()
+
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    @discord.ui.button(label='Stay', style=discord.ButtonStyle.red, emoji='✋')
+    async def stay_button(self, interaction: discord.Interaction, button: Button):
+        if interaction.user.id != self.player_id or self.game_over:
+            await interaction.response.send_message("This isn't your game!", ephemeral=True)
+            return
+
+        self.game_over = True
+
+        # Dealer plays
+        dealer_total = self.calculate_total(self.dealer_cards.copy())
+        while dealer_total < 17:
+            self.dealer_cards.append(self.card_value())
+            dealer_total = self.calculate_total(self.dealer_cards.copy())
+
+        player_total = self.calculate_total(self.player_cards.copy())
+        player = get_player(self.player_id)
+
+        # Determine winner
+        result = ""
+        multiplier = 0
+
+        if dealer_total > 21:
+            result = f"{get_emoji('GODLY_cookie')} **DEALER BUST!** Dealer went over 21!"
+            multiplier = 2
+        elif player_total == 21 and len(self.player_cards) == 2:
+            result = f"{get_emoji('GODLY_Lootbox')} **BLACKJACK!** Perfect 21!"
+            multiplier = 2.5
+        elif player_total > dealer_total:
+            result = f"{get_emoji('GODLY_cookie')} **YOU WIN!** Your hand beats the dealer!"
+            multiplier = 2
+        elif player_total == dealer_total:
+            result = f"{get_emoji('Arena_Cookie')} **TIE!** Same value as dealer!"
+            multiplier = 1
+        else:
+            result = f"{get_emoji('Zombie_eye')} **DEALER WINS!** Dealer's hand is higher!"
+            multiplier = 0
+
+        # Calculate winnings
+        if multiplier == 1:  # Tie
+            winnings = 0
+        else:
+            winnings = int(self.bet * multiplier) - self.bet
+
+        player["coins"] += winnings
+
+        embed = discord.Embed(title=f"{get_emoji('EPIC_RPG')} Blackjack", color=0x000000)
+        embed.add_field(name="Your Cards", value=f"{self.player_cards} = **{player_total}**", inline=True)
+        embed.add_field(name="Dealer Cards", value=f"{self.dealer_cards} = **{dealer_total}**", inline=True)
+        embed.add_field(name="Result", value=result, inline=False)
+
+        if winnings > 0:
+            embed.add_field(name="Winnings", value=f"+{winnings:,} {get_emoji('Coins')}", inline=True)
+        elif winnings < 0:
+            embed.add_field(name="Loss", value=f"{winnings:,} {get_emoji('Coins')}", inline=True)
+        else:
+            embed.add_field(name="Result", value="No change", inline=True)
+
+        embed.add_field(name="Balance", value=f"{player['coins']:,} {get_emoji('Coins')}", inline=True)
+
+        # Check for instant 21 achievement
+        if player_total == 21 and len(self.player_cards) == 2:
+            embed.add_field(name=f"{get_emoji('GODLY_Lootbox')} Achievement!", value="**ez** - Got an instant 21!", inline=False)
+
+        # Disable all buttons
+        for item in self.children:
+            item.disabled = True
+
+        save_player_data()
+        await interaction.response.edit_message(embed=embed, view=self)
 
 @bot.command(name='blackjack', aliases=['bj'])
 async def blackjack(ctx, bet_amount=None):
-    """Play blackjack"""
+    """Play blackjack with buttons"""
     player = get_player(ctx.author.id)
     if player is None:
-        await ctx.send("🎮 Welcome to disRPG! Please use `rpgs start` to create your adventure account first!")
+        await ctx.send(f"{get_emoji('EPIC_RPG')} Welcome to disRPG! Please use `rpgs start` to create your adventure account first!")
         return
 
     if not bet_amount:
@@ -4135,10 +4763,10 @@ async def blackjack(ctx, bet_amount=None):
         return
 
     if player["coins"] < bet:
-        await ctx.send(f"You don't have {bet:,} coins!")
+        await ctx.send(f"You don't have {bet:,} {get_emoji('Coins')}!")
         return
 
-    # Simple blackjack simulation
+    # Deal initial cards
     def card_value():
         return random.randint(1, 11)
 
@@ -4146,67 +4774,33 @@ async def blackjack(ctx, bet_amount=None):
     dealer_cards = [card_value(), card_value()]
 
     player_total = sum(player_cards)
-    dealer_total = sum(dealer_cards)
 
-    # Check for instant 21 (achievement trigger)
-    instant_21 = player_total == 21
+    # Check for instant blackjack
+    if player_total == 21:
+        # Auto-win with blackjack
+        winnings = int(bet * 1.5)
+        player["coins"] += winnings
 
-    # Simple AI for dealer
-    while dealer_total < 17:
-        dealer_cards.append(card_value())
-        dealer_total = sum(dealer_cards)
+        embed = discord.Embed(title=f"{get_emoji('EPIC_RPG')} Blackjack", color=0x00ff00)
+        embed.add_field(name="Your Cards", value=f"{player_cards} = **{player_total}**", inline=True)
+        embed.add_field(name=f"{get_emoji('GODLY_Lootbox')} BLACKJACK!", value="Perfect 21 on first draw!", inline=False)
+        embed.add_field(name="Winnings", value=f"+{winnings:,} {get_emoji('Coins')}", inline=True)
+        embed.add_field(name="Balance", value=f"{player['coins']:,} {get_emoji('Coins')}", inline=True)
+        embed.add_field(name=f"{get_emoji('GODLY_Lootbox')} Achievement!", value="**ez** - Got an instant 21!", inline=False)
 
-    # Determine winner
-    result = ""
-    multiplier = 0
+        save_player_data()
+        await ctx.send(embed=embed)
+        return
 
-    if player_total > 21:
-        result = "💥 **BUST!** You went over 21!"
-        multiplier = 0
-    elif dealer_total > 21:
-        result = "🎉 **DEALER BUST!** Dealer went over 21!"
-        multiplier = 2
-    elif player_total == 21 and len(player_cards) == 2:
-        result = "🃏 **BLACKJACK!** Perfect 21!"
-        multiplier = 2.5
-    elif player_total > dealer_total:
-        result = "🎉 **YOU WIN!** Your hand beats the dealer!"
-        multiplier = 2
-    elif player_total == dealer_total:
-        result = "🤝 **TIE!** Same value as dealer!"
-        multiplier = 1
-    else:
-        result = "💸 **DEALER WINS!** Dealer's hand is higher!"
-        multiplier = 0
-
-    # Calculate winnings
-    if multiplier == 1:  # Tie
-        winnings = 0
-    else:
-        winnings = int(bet * multiplier) - bet
-
-    player["coins"] += winnings
-
-    embed = discord.Embed(title="🃏 Blackjack", color=0x000000)
+    # Create initial embed
+    embed = discord.Embed(title=f"{get_emoji('EPIC_RPG')} Blackjack", color=0x000000)
     embed.add_field(name="Your Cards", value=f"{player_cards} = **{player_total}**", inline=True)
-    embed.add_field(name="Dealer Cards", value=f"{dealer_cards} = **{dealer_total}**", inline=True)
-    embed.add_field(name="Result", value=result, inline=False)
+    embed.add_field(name="Dealer Cards", value=f"[{dealer_cards[0]}, ?] = **{dealer_cards[0]} + ?**", inline=True)
+    embed.add_field(name="Bet", value=f"{bet:,} {get_emoji('Coins')}", inline=True)
 
-    if winnings > 0:
-        embed.add_field(name="Winnings", value=f"+{winnings:,} coins", inline=True)
-    elif winnings < 0:
-        embed.add_field(name="Loss", value=f"{winnings:,} coins", inline=True)
-    else:
-        embed.add_field(name="Result", value="No change", inline=True)
-
-    embed.add_field(name="Balance", value=f"{player['coins']:,} coins", inline=True)
-
-    if instant_21:
-        embed.add_field(name="🏆 Achievement!", value="**ez** - Got an instant 21!", inline=False)
-
-    save_player_data()
-    await ctx.send(embed=embed)
-
+    # Create view with buttons
+    view = BlackjackView(ctx.author.id, bet, player_cards, dealer_cards)
+    await ctx.send(embed=embed, view=view)
 
 @bot.command(name='coinflip', aliases=['cf'])
 async def coinflip(ctx, choice=None, bet_amount=None):
@@ -4261,7 +4855,6 @@ async def coinflip(ctx, choice=None, bet_amount=None):
 
     save_player_data()
     await ctx.send(embed=embed)
-
 
 @bot.command(name='slots')
 async def slots(ctx, bet_amount=None):
@@ -4375,7 +4968,6 @@ async def slots(ctx, bet_amount=None):
     save_player_data()
     await ctx.send(embed=embed)
 
-
 @bot.command(name='multidice')
 async def multidice(ctx, target_user: discord.User = None, bet_amount=None):
     """Play dice with another player"""
@@ -4462,7 +5054,6 @@ async def multidice(ctx, target_user: discord.User = None, bet_amount=None):
 
     save_player_data()
     await ctx.send(embed=embed)
-
 
 @bot.command(name='wheel')
 async def wheel(ctx, bet_amount=None):
@@ -4558,7 +5149,6 @@ async def wheel(ctx, bet_amount=None):
     save_player_data()
     await ctx.send(embed=embed)
 
-
 @bot.command(name='bigdice')
 async def big_dice(ctx, bet_amount=None):
     """Roll the big dice (Area 14+)"""
@@ -4635,7 +5225,6 @@ async def big_dice(ctx, bet_amount=None):
     save_player_data()
     await ctx.send(embed=embed)
 
-
 # Add fruit drops for pickup commands
 FRUIT_DROPS = {
     "area_3_plus": {
@@ -4655,7 +5244,6 @@ MINING_DROPS = {
     }
 }
 
-
 @bot.command(name='bowsaw')
 async def bowsaw(ctx):
     player = get_player(ctx.author.id)
@@ -4671,7 +5259,7 @@ async def bowsaw(ctx):
     # Bowsaw amounts: Wooden Log 6-10, Epic Log 3-5, Super Log 2-3, Mega Log 1-2, others 1
     bowsaw_multipliers = {
         "Wooden Log": [6, 10],
-        "Epic Log": [3, 5],
+        "Epic Log": [3, 5], 
         "Super Log": [2, 3],
         "Mega Log": [1, 2],
         "HYPER Log": [1, 1],
@@ -4744,7 +5332,6 @@ async def bowsaw(ctx):
     save_player_data()
     await ctx.send(embed=embed)
 
-
 @bot.command(name='chainsaw')
 async def chainsaw(ctx):
     player = get_player(ctx.author.id)
@@ -4760,7 +5347,7 @@ async def chainsaw(ctx):
     # Chainsaw amounts: Wooden Log 8-15, Epic Log 4-7, Super Log 3-5, Mega Log 2, others 1
     chainsaw_multipliers = {
         "Wooden Log": [8, 15],
-        "Epic Log": [4, 7],
+        "Epic Log": [4, 7], 
         "Super Log": [3, 5],
         "Mega Log": [2, 2],
         "HYPER Log": [1, 1],
@@ -4816,7 +5403,7 @@ async def chainsaw(ctx):
             # Add emojis for different log types
             log_emojis = {
                 "Wooden Log": "🪵",
-                "Epic Log": "📜",
+                "Epic Log": "📜", 
                 "Super Log": "🟫",
                 "Mega Log": "🟤",
                 "HYPER Log": "🟨",
@@ -4844,7 +5431,6 @@ async def chainsaw(ctx):
 
     save_player_data()
     await ctx.send(result_message)
-
 
 @bot.command(name='boat')
 async def boat(ctx):
@@ -4914,7 +5500,6 @@ async def boat(ctx):
     save_player_data()
     await ctx.send(embed=embed)
 
-
 @bot.command(name='bigboat')
 async def bigboat(ctx):
     player = get_player(ctx.author.id)
@@ -4983,7 +5568,6 @@ async def bigboat(ctx):
     save_player_data()
     await ctx.send(embed=embed)
 
-
 @bot.command(name='pickup')
 async def pickup(ctx):
     player = get_player(ctx.author.id)
@@ -5025,7 +5609,6 @@ async def pickup(ctx):
 
     save_player_data()
     await ctx.send(embed=embed)
-
 
 @bot.command(name='ladder')
 async def ladder(ctx):
@@ -5071,7 +5654,6 @@ async def ladder(ctx):
     save_player_data()
     await ctx.send(embed=embed)
 
-
 @bot.command(name='tractor')
 async def tractor(ctx):
     player = get_player(ctx.author.id)
@@ -5115,7 +5697,6 @@ async def tractor(ctx):
 
     save_player_data()
     await ctx.send(embed=embed)
-
 
 @bot.command(name='greenhouse')
 async def greenhouse(ctx):
@@ -5161,7 +5742,6 @@ async def greenhouse(ctx):
     save_player_data()
     await ctx.send(embed=embed)
 
-
 @bot.command(name='mine')
 async def mine_command(ctx):
     player = get_player(ctx.author.id)
@@ -5192,7 +5772,7 @@ async def mine_command(ctx):
     # Create beautiful result message
     actions = [
         "is mining deep in the cave! Their pickaxe strikes the rock with determination",
-        "swings their pickaxe with power! Sparks fly as metal meets stone",
+        "swings their pickaxe with power! Sparks fly as metal meets stone", 
         "is working hard in the mines! The sound of mining echoes through the tunnels",
         "digs deeper into the earth! Precious materials await in the darkness"
     ]
@@ -5211,7 +5791,6 @@ async def mine_command(ctx):
 
     save_player_data()
     await ctx.send(result_message)
-
 
 @bot.command(name='pickaxe')
 async def pickaxe(ctx):
@@ -5255,7 +5834,6 @@ async def pickaxe(ctx):
     save_player_data()
     await ctx.send(embed=embed)
 
-
 @bot.command(name='drill')
 async def drill(ctx):
     player = get_player(ctx.author.id)
@@ -5298,7 +5876,6 @@ async def drill(ctx):
     save_player_data()
     await ctx.send(embed=embed)
 
-
 @bot.command(name='dynamite')
 async def dynamite(ctx):
     player = get_player(ctx.author.id)
@@ -5340,7 +5917,6 @@ async def dynamite(ctx):
 
     save_player_data()
     await ctx.send(embed=embed)
-
 
 @bot.command(name='farm')
 async def farm(ctx):
@@ -5406,7 +5982,6 @@ async def farm(ctx):
     save_player_data()
     await ctx.send(result_message)
 
-
 @bot.command(name='unlocks')
 async def unlocks(ctx):
     player = get_player(ctx.author.id)
@@ -5432,6 +6007,118 @@ async def unlocks(ctx):
 
     await ctx.send(embed=embed)
 
+# Time Travel Views
+class TimeTraveConfirmView(View):
+    def __init__(self, player_id):
+        super().__init__(timeout=60)
+        self.player_id = player_id
+
+    @discord.ui.button(label='Yes', style=discord.ButtonStyle.green, emoji='✅')
+    async def yes_button(self, interaction: discord.Interaction, button: Button):
+        if interaction.user.id != self.player_id:
+            await interaction.response.send_message("This isn't your time travel!", ephemeral=True)
+            return
+
+        # Disable buttons
+        for item in self.children:
+            item.disabled = True
+
+        # Execute time travel
+        player = get_player(self.player_id)
+        tt_count = player.get("time_travels", 0)
+
+        # Save what stays
+        coins = player["coins"]
+        horse = player.get("horse", None)
+        professions = player.get("job_levels", {"mining": 1, "fishing": 1, "woodcutting": 1, "crafter": 1})
+        pets = player.get("pets", {})
+        dragon_essences = player["inventory"].get("Dragon Essence", 0)
+        time_dragon_essences = player["inventory"].get("Time Dragon Essence", 0)
+        arena_cookies = player.get("arena_cookies", 0)
+        epic_shop_items = player.get("epic_shop_items", {})
+
+        # Reset player
+        player["level"] = 1
+        player["exp"] = 0
+        player["hp"] = 100
+        player["max_hp"] = 100
+        player["area"] = 1
+        player["weapon"] = "Wooden Sword"
+        player["armor"] = None
+        player["inventory"] = {"Wooden Sword": 1, "Wooden Log": 50, "Normie Fish": 20, "Apple": 10}
+        player["last_hunt"] = 0
+        player["last_adventure"] = 0
+        player["enchants"] = {}
+        player["cooking_boosts"] = {"attack_boost": 0, "defense_boost": 0, "hp_boost": 0}
+
+        # Restore what stays
+        player["coins"] = coins
+        if horse:
+            player["horse"] = horse
+        player["job_levels"] = professions
+        if pets:
+            player["pets"] = pets
+        if dragon_essences > 0:
+            player["inventory"]["Dragon Essence"] = dragon_essences
+        if time_dragon_essences > 0:
+            player["inventory"]["Time Dragon Essence"] = time_dragon_essences
+        if arena_cookies > 0:
+            player["arena_cookies"] = arena_cookies
+        if epic_shop_items:
+            player["epic_shop_items"] = epic_shop_items
+
+        # Increment time travel count
+        player["time_travels"] = tt_count + 1
+
+        # Check for new titles
+        if "titles" not in player:
+            player["titles"] = []
+
+        new_title = None
+        if player["time_travels"] in TT_TITLES:
+            title = TT_TITLES[player["time_travels"]]
+            if title not in player["titles"]:
+                player["titles"].append(title)
+                new_title = title
+
+        # Show result
+        new_bonuses = calculate_tt_bonuses(player["time_travels"])
+
+        embed = discord.Embed(title=f"{get_emoji('Time_Travel')} Time Travel Complete!", color=0x00ff00)
+        embed.add_field(name="Time Travels", value=f"{player['time_travels']}", inline=True)
+        embed.add_field(name="New Bonuses", 
+                       value=f"EXP: +{new_bonuses['exp']}%\nDrop Chance: +{new_bonuses['drops']}%\nWorking Items: +{new_bonuses['working']}%", 
+                       inline=True)
+
+        max_dungeon = get_max_dungeon(player["time_travels"])
+        embed.add_field(name="Max Dungeon", value=f"Dungeon {max_dungeon}", inline=True)
+
+        if new_title:
+            embed.add_field(name=f"{get_emoji('GODLY_Lootbox')} New Title Unlocked!", value=f"**{new_title}**", inline=False)
+
+        available_titles = [title for tt, title in TT_TITLES.items() if player["time_travels"] >= tt]
+        if available_titles:
+            embed.add_field(name="Available Titles", value=", ".join(available_titles[-3:]), inline=False)
+
+        embed.add_field(name="Status", value="You are back at Level 1, Area 1. Your adventure begins anew with permanent bonuses!", inline=False)
+
+        save_player_data()
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    @discord.ui.button(label='No', style=discord.ButtonStyle.red, emoji='❌')
+    async def no_button(self, interaction: discord.Interaction, button: Button):
+        if interaction.user.id != self.player_id:
+            await interaction.response.send_message("This isn't your time travel!", ephemeral=True)
+            return
+
+        # Disable buttons
+        for item in self.children:
+            item.disabled = True
+
+        embed = discord.Embed(title=f"{get_emoji('Time_Travel')} Time Travel Cancelled", color=0xff6600)
+        embed.add_field(name="Status", value="Time travel has been cancelled. Your adventure continues!", inline=False)
+
+        await interaction.response.edit_message(embed=embed, view=self)
 
 # Time Travel System
 def calculate_tt_bonuses(tt_count):
@@ -5450,7 +6137,6 @@ def calculate_tt_bonuses(tt_count):
         "drops": drops_bonus,
         "working": working_bonus
     }
-
 
 def calculate_stt_score(player):
     """Calculate Super Time Travel score"""
@@ -5489,7 +6175,6 @@ def calculate_stt_score(player):
 
     return int(score)
 
-
 def get_tt_titles(tt_count):
     """Get available titles based on time travel count"""
     titles = []
@@ -5509,7 +6194,6 @@ def get_tt_titles(tt_count):
         titles.append("VOOFID")
     return titles
 
-
 def get_max_dungeon(tt_count):
     """Get maximum dungeon based on time travel count"""
     if tt_count == 0:
@@ -5525,14 +6209,16 @@ def get_max_dungeon(tt_count):
     else:
         return 15
 
-
 @bot.command(name='timetravel', aliases=['tt'])
-async def time_travel(ctx, confirm=None):
+async def time_travel(ctx):
     player = get_player(ctx.author.id)
+    if player is None:
+        await ctx.send(f"{get_emoji('EPIC_RPG')} Welcome to disRPG! Please use `rpgs start` to create your adventure account first!")
+        return
 
     # Check if time travel is unlocked
     if player["area"] < 11:
-        await ctx.send("🔒 Time Travel is unlocked when you first reach Area 11!")
+        await ctx.send(f"{get_emoji('Time_Travel')} Time Travel is unlocked when you first reach Area 11!")
         return
 
     # Determine minimum area required for time travel based on TT count
@@ -5554,131 +6240,49 @@ async def time_travel(ctx, confirm=None):
         await ctx.send(f"You need to reach Area {min_area} to time travel with {tt_count} previous time travels!")
         return
 
-    if confirm != "confirm":
-        # Show time travel info
-        current_bonuses = calculate_tt_bonuses(tt_count)
-        next_bonuses = calculate_tt_bonuses(tt_count + 1)
+    # Show time travel info with confirmation buttons
+    current_bonuses = calculate_tt_bonuses(tt_count)
+    next_bonuses = calculate_tt_bonuses(tt_count + 1)
 
-        embed = discord.Embed(title="⏰ Time Travel", description=f"Current Time Travels: {tt_count}", color=0x9932cc)
+    embed = discord.Embed(title=f"{get_emoji('Time_Travel')} Time Travel", description=f"Current Time Travels: {tt_count}", color=0x9932cc)
 
-        # Current bonuses
-        if tt_count > 0:
-            embed.add_field(name="Current Bonuses",
-                            value=f"EXP: +{current_bonuses['exp']}%\nDrop Chance: +{current_bonuses['drops']}%\nWorking Items: +{current_bonuses['working']}%",
-                            inline=True)
+    # Current bonuses
+    if tt_count > 0:
+        embed.add_field(name="Current Bonuses", 
+                      value=f"EXP: +{current_bonuses['exp']}%\nDrop Chance: +{current_bonuses['drops']}%\nWorking Items: +{current_bonuses['working']}%", 
+                      inline=True)
 
-        # Next bonuses
-        embed.add_field(name="Next TT Bonuses",
-                        value=f"EXP: +{next_bonuses['exp']}%\nDrop Chance: +{next_bonuses['drops']}%\nWorking Items: +{next_bonuses['working']}%",
-                        inline=True)
+    # Next bonuses
+    embed.add_field(name="Next TT Bonuses", 
+                   value=f"EXP: +{next_bonuses['exp']}%\nDrop Chance: +{next_bonuses['drops']}%\nWorking Items: +{next_bonuses['working']}%", 
+                   inline=True)
 
-        # What gets reset
-        embed.add_field(name="⚠️ Gets Reset",
-                        value="• Level (back to 1)\n• Area (back to 1)\n• Equipment\n• Most inventory items\n• HP/Stats",
-                        inline=False)
+    # What gets reset
+    embed.add_field(name=f"{get_emoji('Zombie_eye')} Gets Reset", 
+                   value="• Level (back to 1)\n• Area (back to 1)\n• Equipment\n• Most inventory items\n• HP/Stats", 
+                   inline=False)
 
-        # What stays
-        embed.add_field(name="✅ Stays",
-                        value="• Coins (all types)\n• Horse\n• Professions\n• Pets\n• Dragon Essences\n• Arena Cookies\n• Epic Shop items",
-                        inline=False)
+    # What stays
+    embed.add_field(name=f"{get_emoji('GODLY_cookie')} Stays", 
+                   value=f"• {get_emoji('Coins')} Coins (all types)\n• Horse\n• Professions\n• Pets\n• {get_emoji('Dragon_essence')} Dragon Essences\n• {get_emoji('Arena_Cookie')} Arena Cookies\n• Epic Shop items", 
+                   inline=False)
 
-        # Max dungeon access
-        max_dungeon = get_max_dungeon(tt_count + 1)
-        embed.add_field(name="Dungeon Access", value=f"After TT: Max Dungeon {max_dungeon}", inline=True)
+    # Max dungeon access
+    max_dungeon = get_max_dungeon(tt_count + 1)
+    embed.add_field(name="Dungeon Access", value=f"After TT: Max Dungeon {max_dungeon}", inline=True)
 
-        # Titles
-        available_titles = get_tt_titles(tt_count + 1)
-        if available_titles:
-            embed.add_field(name="Titles Available", value=", ".join(available_titles), inline=False)
-
-        embed.add_field(name="⚠️ Warning",
-                        value="This action cannot be undone!\nUse `rpg tt confirm` to proceed",
-                        inline=False)
-
-        await ctx.send(embed=embed)
-        return
-
-    # Execute time travel
-    # Save what stays
-    coins = player["coins"]
-    horse = player.get("horse", None)
-    professions = player.get("job_levels", {"mining": 1, "fishing": 1, "woodcutting": 1, "crafter": 1})
-    pets = player.get("pets", {})
-    dragon_essences = player["inventory"].get("Dragon Essence", 0)
-    time_dragon_essences = player["inventory"].get("Time Dragon Essence", 0)
-    arena_cookies = player.get("arena_cookies", 0)
-    epic_shop_items = player.get("epic_shop_items", {})
-
-    # Reset player
-    player["level"] = 1
-    player["exp"] = 0
-    player["hp"] = 100
-    player["max_hp"] = 100
-    player["area"] = 1
-    player["weapon"] = "Wooden Sword"
-    player["armor"] = None
-    player["inventory"] = {"Wooden Sword": 1, "Wooden Log": 50, "Normie Fish": 20, "Apple": 10}
-    player["last_hunt"] = 0
-    player["last_adventure"] = 0
-    player["enchants"] = {}
-    player["cooking_boosts"] = {"attack_boost": 0, "defense_boost": 0, "hp_boost": 0}
-
-    # Restore what stays
-    player["coins"] = coins
-    if horse:
-        player["horse"] = horse
-    player["job_levels"] = professions
-    if pets:
-        player["pets"] = pets
-    if dragon_essences > 0:
-        player["inventory"]["Dragon Essence"] = dragon_essences
-    if time_dragon_essences > 0:
-        player["inventory"]["Time Dragon Essence"] = time_dragon_essences
-    if arena_cookies > 0:
-        player["arena_cookies"] = arena_cookies
-    if epic_shop_items:
-        player["epic_shop_items"] = epic_shop_items
-
-    # Increment time travel count
-    player["time_travels"] = tt_count + 1
-
-    # Check for new titles
-    if "titles" not in player:
-        player["titles"] = []
-
-    new_title = None
-    if player["time_travels"] in TT_TITLES:
-        title = TT_TITLES[player["time_travels"]]
-        if title not in player["titles"]:
-            player["titles"].append(title)
-            new_title = title
-
-    # Show result
-    new_bonuses = calculate_tt_bonuses(player["time_travels"])
-
-    embed = discord.Embed(title="⏰ Time Travel Complete!", color=0x00ff00)
-    embed.add_field(name="Time Travels", value=f"{player['time_travels']}", inline=True)
-    embed.add_field(name="New Bonuses",
-                    value=f"EXP: +{new_bonuses['exp']}%\nDrop Chance: +{new_bonuses['drops']}%\nWorking Items: +{new_bonuses['working']}%",
-                    inline=True)
-
-    max_dungeon = get_max_dungeon(player["time_travels"])
-    embed.add_field(name="Max Dungeon", value=f"Dungeon {max_dungeon}", inline=True)
-
-    if new_title:
-        embed.add_field(name="🏆 New Title Unlocked!", value=f"**{new_title}**", inline=False)
-
-    available_titles = [title for tt, title in TT_TITLES.items() if player["time_travels"] >= tt]
+    # Titles
+    available_titles = get_tt_titles(tt_count + 1)
     if available_titles:
-        embed.add_field(name="Available Titles", value=", ".join(available_titles[-3:]), inline=False)
+        embed.add_field(name="Titles Available", value=", ".join(available_titles), inline=False)
 
-    embed.add_field(name="Status",
-                    value="You are back at Level 1, Area 1. Your adventure begins anew with permanent bonuses!",
-                    inline=False)
+    embed.add_field(name=f"{get_emoji('Time_Travel')} Are you sure to time travel?", 
+                   value="This action cannot be undone!\nChoose carefully below:", 
+                   inline=False)
 
-    save_player_data()
-    await ctx.send(embed=embed)
-
+    # Create view with confirmation buttons
+    view = TimeTraveConfirmView(ctx.author.id)
+    await ctx.send(embed=embed, view=view)
 
 @bot.command(name='supertimetravel', aliases=['stt'])
 async def super_time_travel(ctx, confirm=None):
@@ -5711,9 +6315,9 @@ async def super_time_travel(ctx, confirm=None):
 
         embed.add_field(name="Available Rewards", value=rewards_text, inline=False)
 
-        embed.add_field(name="⚠️ Important",
-                        value="• You must choose ONE reward\n• Your inventory will be used for score calculation\n• This cannot be undone!\nUse `rpg stt confirm` to proceed",
-                        inline=False)
+        embed.add_field(name="⚠️ Important", 
+                       value="• You must choose ONE reward\n• Your inventory will be used for score calculation\n• This cannot be undone!\nUse `rpg stt confirm` to proceed", 
+                       inline=False)
 
         await ctx.send(embed=embed)
         return
@@ -5755,12 +6359,10 @@ async def super_time_travel(ctx, confirm=None):
     embed = discord.Embed(title="🌌 Super Time Travel Complete!", color=0x4b0082)
     embed.add_field(name="STT Score Used", value=f"{score}", inline=True)
     embed.add_field(name="Time Travels", value=f"{player['time_travels']}", inline=True)
-    embed.add_field(name="Status", value="Super Time Travel completed! Your adventure begins with enhanced benefits!",
-                    inline=False)
+    embed.add_field(name="Status", value="Super Time Travel completed! Your adventure begins with enhanced benefits!", inline=False)
 
     save_player_data()
     await ctx.send(embed=embed)
-
 
 @bot.command(name='drops')
 async def drops_info(ctx, category=None):
@@ -5777,9 +6379,9 @@ async def drops_info(ctx, category=None):
         embed.add_field(name="Mob Drops", value=hunt_drops_text, inline=False)
 
         if player["area"] >= 16:
-            embed.add_field(name="Special Drop (Areas 16-20)",
-                            value=f"**Dark Energy**\nChance: {DARK_ENERGY_DROP['chance']}% | Sell: {DARK_ENERGY_DROP['sell_price']:,} coins",
-                            inline=False)
+            embed.add_field(name="Special Drop (Areas 16-20)", 
+                          value=f"**Dark Energy**\nChance: {DARK_ENERGY_DROP['chance']}% | Sell: {DARK_ENERGY_DROP['sell_price']:,} coins", 
+                          inline=False)
 
     elif category == "boss":
         embed = discord.Embed(title="🐉 Boss Drops", color=0x8b0000)
@@ -5806,9 +6408,7 @@ async def drops_info(ctx, category=None):
         chop_info += "⭐ **ULTIMATE Log:** 0.01% (Area 9+)\n"
 
         embed.add_field(name="Drop Rates", value=chop_info, inline=False)
-        embed.add_field(name="Commands",
-                        value="• `chop` - Base amounts\n• `axe` - More quantity\n• `bowsaw` - Even more\n• `chainsaw` - Maximum",
-                        inline=False)
+        embed.add_field(name="Commands", value="• `chop` - Base amounts\n• `axe` - More quantity\n• `bowsaw` - Even more\n• `chainsaw` - Maximum", inline=False)
 
     elif category == "fish":
         embed = discord.Embed(title="🎣 Fishing Drops", color=0x4169e1)
@@ -5823,21 +6423,16 @@ async def drops_info(ctx, category=None):
         fish_info += "⭐ SUPER Fish: ~0.01%\n"
 
         embed.add_field(name="Drop Rates", value=fish_info, inline=False)
-        embed.add_field(name="Commands",
-                        value="• `fish` - Base rates\n• `net` - Better EPIC Fish chance\n• `boat` - Even better\n• `bigboat` - Best rates",
-                        inline=False)
+        embed.add_field(name="Commands", value="• `fish` - Base rates\n• `net` - Better EPIC Fish chance\n• `boat` - Even better\n• `bigboat` - Best rates", inline=False)
 
     else:
-        embed = discord.Embed(title="📋 Drop Information", description="Choose a category to view detailed drop rates",
-                              color=0x9932cc)
-        embed.add_field(name="Available Categories",
-                        value="`rpg drops hunt` - Mob drops from hunting\n`rpg drops boss` - Boss drops from dungeons\n`rpg drops chop` - Wood from chopping\n`rpg drops fish` - Fish from fishing",
-                        inline=False)
-        embed.add_field(name="Your Area", value=f"Area {player['area']} - {AREAS[player['area']]['name']}",
-                        inline=False)
+        embed = discord.Embed(title="📋 Drop Information", description="Choose a category to view detailed drop rates", color=0x9932cc)
+        embed.add_field(name="Available Categories", 
+                       value="`rpg drops hunt` - Mob drops from hunting\n`rpg drops boss` - Boss drops from dungeons\n`rpg drops chop` - Wood from chopping\n`rpg drops fish` - Fish from fishing", 
+                       inline=False)
+        embed.add_field(name="Your Area", value=f"Area {player['area']} - {AREAS[player['area']]['name']}", inline=False)
 
     await ctx.send(embed=embed)
-
 
 @bot.command(name='dungeon', aliases=['dung'])
 async def dungeon_command(ctx, dungeon_num=None):
@@ -5926,11 +6521,12 @@ async def dungeon_command(ctx, dungeon_num=None):
                 if player["area"] == dungeon_id and player["area"] < 21:
                     old_area = player["area"]
                     player["area"] += 1
-
+                    
                     # Update max area reached
                     if "max_area_reached" not in player:
-                        player["max_area_reached"] = old_area
-                    player["max_area_reached"] = max(player["max_area_reached"], player["area"])
+                        player["max_area_reached"] = player["area"]
+                    else:
+                        player["max_area_reached"] = max(player["max_area_reached"], player["area"])
 
                     # Check for newly unlocked commands
                     newly_unlocked = []
@@ -5942,11 +6538,9 @@ async def dungeon_command(ctx, dungeon_num=None):
                     embed.add_field(name="Reward", value=f"{reward:,} coins", inline=True)
 
                     if boss_drops:
-                        embed.add_field(name="🎁 Boss Drops!", value="\n".join([f"💎 {drop}" for drop in boss_drops]),
-                                        inline=False)
+                        embed.add_field(name="🎁 Boss Drops!", value="\n".join([f"💎 {drop}" for drop in boss_drops]), inline=False)
 
-                    embed.add_field(name="Area Progress",
-                                    value=f"Advanced from Area {old_area} to Area {player['area']}!", inline=False)
+                    embed.add_field(name="Area Progress", value=f"Advanced from Area {old_area} to Area {player['area']}!", inline=False)
 
                     if newly_unlocked:
                         embed.add_field(name="🎊 New Commands Unlocked!", value=", ".join(newly_unlocked), inline=False)
@@ -5956,16 +6550,14 @@ async def dungeon_command(ctx, dungeon_num=None):
                     embed.add_field(name="Reward", value=f"{reward:,} coins", inline=True)
 
                     if boss_drops:
-                        embed.add_field(name="🎁 Boss Drops!", value="\n".join([f"💎 {drop}" for drop in boss_drops]),
-                                        inline=False)
+                        embed.add_field(name="🎁 Boss Drops!", value="\n".join([f"💎 {drop}" for drop in boss_drops]), inline=False)
 
             else:
                 # Defeat
                 player["hp"] = 1
                 embed.color = 0xff0000
                 embed.add_field(name="💀 Defeat!", value=f"The {dungeon['name']} was too strong!", inline=False)
-                embed.add_field(name="Result", value="You survived but are at 1 HP. Use `rpg heal` to recover.",
-                                inline=False)
+                embed.add_field(name="Result", value="You survived but are at 1 HP. Use `rpg heal` to recover.", inline=False)
 
             save_player_data()
             await ctx.send(embed=embed)
@@ -5985,12 +6577,10 @@ async def dungeon_command(ctx, dungeon_num=None):
         dungeon_list += f"💰 Key: {dungeon['key_price']:,} coins | ⚔️ Attack: {dungeon['attack']}\n\n"
 
     embed.add_field(name="Dragons to Fight", value=dungeon_list, inline=False)
-    embed.add_field(name="Usage", value=f"`rpg dung <number>` - Fight a dungeon\nYour current area: {player['area']}",
-                    inline=False)
+    embed.add_field(name="Usage", value=f"`rpg dung <number>` - Fight a dungeon\nYour current area: {player['area']}", inline=False)
     embed.add_field(name="Note", value="Defeating dungeons advances you to the next area!", inline=False)
 
     await ctx.send(embed=embed)
-
 
 # Slash command versions
 @bot.tree.command(name="start", description="Register a new player account")
@@ -5999,30 +6589,21 @@ async def slash_start(interaction: discord.Interaction):
 
     existing_player = get_player(interaction.user.id)
     if existing_player is not None:
-        embed = discord.Embed(title="🎮 Account Exists",
-                              description="You already have an account! Your adventure continues...", color=0x00ff00)
+        embed = discord.Embed(title="🎮 Account Exists", description="You already have an account! Your adventure continues...", color=0x00ff00)
         await interaction.followup.send(embed=embed)
         return
 
     # Create new player
     player = create_player(interaction.user.id)
 
-    embed = discord.Embed(title="🎮 Welcome to disRPG!",
-                          description=f"Welcome, {interaction.user.display_name}! Your adventure begins now!",
-                          color=0x00ff00)
-    embed.add_field(name="Starting Stats",
-                    value=f"Level: {player['level']}\nHP: {player['hp']}/{player['max_hp']}\nCoins: {player['coins']}\nArea: {player['area']}",
-                    inline=True)
-    embed.add_field(name="Starting Equipment", value=f"Weapon: {player['weapon']}\nStarting materials included!",
-                    inline=True)
-    embed.add_field(name="Get Started",
-                    value="Use `/commands` to see all available commands\nTry `/hunt` to start your first battle!",
-                    inline=False)
+    embed = discord.Embed(title="🎮 Welcome to disRPG!", description=f"Welcome, {interaction.user.display_name}! Your adventure begins now!", color=0x00ff00)
+    embed.add_field(name="Starting Stats", value=f"Level: {player['level']}\nHP: {player['hp']}/{player['max_hp']}\nCoins: {player['coins']}\nArea: {player['area']}", inline=True)
+    embed.add_field(name="Starting Equipment", value=f"Weapon: {player['weapon']}\nStarting materials included!", inline=True)
+    embed.add_field(name="Get Started", value="Use `/commands` to see all available commands\nTry `/hunt` to start your first battle!", inline=False)
     embed.add_field(name="Tip", value="Use `/profile` to view your stats anytime", inline=False)
 
     save_player_data()
     await interaction.followup.send(embed=embed)
-
 
 @bot.tree.command(name="hunt", description="Hunt monsters in your current area")
 async def slash_hunt(interaction: discord.Interaction, mode: str = None):
@@ -6043,15 +6624,12 @@ async def slash_hunt(interaction: discord.Interaction, mode: str = None):
     ctx = SlashContext(interaction)
     await hunt(ctx, mode)
 
-
 @bot.tree.command(name="stats", description="View your character stats")
 async def slash_stats(interaction: discord.Interaction):
     await interaction.response.defer()
     player = get_player(interaction.user.id)
     if player is None:
-        embed = discord.Embed(title="🎮 No Account",
-                              description="Welcome to disRPG! Please use `/start` to create your adventure account first!",
-                              color=0xff0000)
+        embed = discord.Embed(title="🎮 No Account", description="Welcome to disRPG! Please use `/start` to create your adventure account first!", color=0xff0000)
         await interaction.followup.send(embed=embed)
         return
 
@@ -6064,7 +6642,6 @@ async def slash_stats(interaction: discord.Interaction):
     embed.add_field(name="Current Area", value=f"{player['area']} - {area_name}", inline=True)
     embed.add_field(name="Weapon", value=player["weapon"], inline=True)
     await interaction.followup.send(embed=embed)
-
 
 @bot.tree.command(name="profile", description="View your character profile")
 async def slash_profile(interaction: discord.Interaction, user: discord.User = None):
@@ -6085,15 +6662,12 @@ async def slash_profile(interaction: discord.Interaction, user: discord.User = N
     ctx = SlashContext(interaction)
     await profile(ctx, target_user)
 
-
 @bot.tree.command(name="inventory", description="View your inventory")
 async def slash_inventory(interaction: discord.Interaction):
     await interaction.response.defer()
     player = get_player(interaction.user.id)
     if player is None:
-        embed = discord.Embed(title="🎮 No Account",
-                              description="Welcome to disRPG! Please use `/start` to create your adventure account first!",
-                              color=0xff0000)
+        embed = discord.Embed(title="🎮 No Account", description="Welcome to disRPG! Please use `/start` to create your adventure account first!", color=0xff0000)
         await interaction.followup.send(embed=embed)
         return
 
@@ -6109,7 +6683,6 @@ async def slash_inventory(interaction: discord.Interaction):
 
     embed.add_field(name="Coins", value=player["coins"], inline=True)
     await interaction.followup.send(embed=embed)
-
 
 @bot.tree.command(name="heal", description="Heal your character for 50 coins")
 async def slash_heal(interaction: discord.Interaction):
@@ -6129,7 +6702,6 @@ async def slash_heal(interaction: discord.Interaction):
     ctx = SlashContext(interaction)
     await heal(ctx)
 
-
 @bot.tree.command(name="daily", description="Claim your daily reward")
 async def slash_daily(interaction: discord.Interaction):
     await interaction.response.defer()
@@ -6147,7 +6719,6 @@ async def slash_daily(interaction: discord.Interaction):
 
     ctx = SlashContext(interaction)
     await daily(ctx)
-
 
 @bot.tree.command(name="help", description="View all available commands and help")
 async def slash_help(interaction: discord.Interaction, category: str = None):
@@ -6167,7 +6738,6 @@ async def slash_help(interaction: discord.Interaction, category: str = None):
     ctx = SlashContext(interaction)
     await help_command(ctx, category)
 
-
 @bot.tree.command(name="shop", description="View the weapon shop")
 async def slash_shop(interaction: discord.Interaction, page: str = None):
     await interaction.response.defer()
@@ -6186,7 +6756,6 @@ async def slash_shop(interaction: discord.Interaction, page: str = None):
     ctx = SlashContext(interaction)
     await shop(ctx, page)
 
-
 @bot.tree.command(name="fish", description="Fish for materials")
 async def slash_fish(interaction: discord.Interaction):
     await interaction.response.defer()
@@ -6194,9 +6763,7 @@ async def slash_fish(interaction: discord.Interaction):
     # Check if player exists first
     player = get_player(interaction.user.id)
     if player is None:
-        embed = discord.Embed(title="🎮 No Account",
-                              description="Welcome to disRPG! Please use `/start` to create your adventure account first!",
-                              color=0xff0000)
+        embed = discord.Embed(title="🎮 No Account", description="Welcome to disRPG! Please use `/start` to create your adventure account first!", color=0xff0000)
         await interaction.followup.send(embed=embed)
         return
 
@@ -6214,7 +6781,6 @@ async def slash_fish(interaction: discord.Interaction):
     ctx = SlashContext(interaction)
     await fish(ctx)
 
-
 @bot.tree.command(name="chop", description="Chop wood for materials")
 async def slash_chop(interaction: discord.Interaction):
     await interaction.response.defer()
@@ -6222,9 +6788,7 @@ async def slash_chop(interaction: discord.Interaction):
     # Check if player exists first
     player = get_player(interaction.user.id)
     if player is None:
-        embed = discord.Embed(title="🎮 No Account",
-                              description="Welcome to disRPG! Please use `/start` to create your adventure account first!",
-                              color=0xff0000)
+        embed = discord.Embed(title="🎮 No Account", description="Welcome to disRPG! Please use `/start` to create your adventure account first!", color=0xff0000)
         await interaction.followup.send(embed=embed)
         return
 
@@ -6242,7 +6806,6 @@ async def slash_chop(interaction: discord.Interaction):
     ctx = SlashContext(interaction)
     await chop(ctx)
 
-
 # Helper function to create context wrapper for slash commands
 def create_slash_context(interaction):
     class SlashContext:
@@ -6258,7 +6821,6 @@ def create_slash_context(interaction):
 
     return SlashContext(interaction)
 
-
 # Info slash commands
 @bot.tree.command(name="info", description="View bot features and statistics")
 async def slash_info(interaction: discord.Interaction):
@@ -6266,13 +6828,11 @@ async def slash_info(interaction: discord.Interaction):
     ctx = create_slash_context(interaction)
     await bot_info(ctx)
 
-
 @bot.tree.command(name="about", description="View bot information and credits")
 async def slash_about(interaction: discord.Interaction):
     await interaction.response.defer()
     ctx = create_slash_context(interaction)
     await about_command(ctx)
-
 
 # Key slash commands - these are the most important ones
 @bot.tree.command(name="adventure", description="Go on a challenging adventure")
@@ -6281,13 +6841,11 @@ async def slash_adventure(interaction: discord.Interaction, mode: str = None):
     ctx = create_slash_context(interaction)
     await adventure(ctx, mode)
 
-
 @bot.tree.command(name="area", description="View current area information")
 async def slash_area(interaction: discord.Interaction, action: str = None, area_num: str = None):
     await interaction.response.defer()
     ctx = create_slash_context(interaction)
     await area_command(ctx, action, area_num)
-
 
 @bot.tree.command(name="buy", description="Buy items from the shop")
 async def slash_buy(interaction: discord.Interaction, item: str):
@@ -6295,20 +6853,17 @@ async def slash_buy(interaction: discord.Interaction, item: str):
     ctx = create_slash_context(interaction)
     await buy(ctx, item_name=item)
 
-
 @bot.tree.command(name="cooldowns", description="Check your command cooldowns")
 async def slash_cooldowns(interaction: discord.Interaction, user: discord.User = None):
     await interaction.response.defer()
     ctx = create_slash_context(interaction)
     await cooldowns(ctx, user)
 
-
 @bot.tree.command(name="leaderboard", description="View the top players")
 async def slash_leaderboard(interaction: discord.Interaction, board_type: str = "level", page: int = 1):
     await interaction.response.defer()
     ctx = create_slash_context(interaction)
     await leaderboard(ctx, board_type, page)
-
 
 @bot.command(name='info')
 async def bot_info(ctx):
@@ -6328,7 +6883,7 @@ async def bot_info(ctx):
         inline=True
     )
 
-    # Combat System
+    # Combat System  
     embed.add_field(
         name="⚔️ **Combat System**",
         value="```\n• Hunt Monsters\n• Epic Adventures\n• Hardmode Challenges\n• PvP Duels\n• Arena Battles```",
@@ -6383,7 +6938,6 @@ async def bot_info(ctx):
 
     await ctx.send(embed=embed)
 
-
 @bot.command(name='about')
 async def about_command(ctx):
     """Display bot version and credits"""
@@ -6415,7 +6969,6 @@ async def about_command(ctx):
 
     await ctx.send(embed=embed)
 
-
 # Owner-only commands
 @bot.command(name='give')
 async def give_item(ctx, user: discord.User, item_name, amount=1):
@@ -6446,7 +6999,6 @@ async def give_item(ctx, user: discord.User, item_name, amount=1):
     save_player_data()
     await ctx.send(embed=embed)
 
-
 @bot.command(name='setlevel')
 async def set_level(ctx, user: discord.User, level):
     """Owner only: Set player level"""
@@ -6476,7 +7028,6 @@ async def set_level(ctx, user: discord.User, level):
 
     save_player_data()
     await ctx.send(embed=embed)
-
 
 @bot.command(name='setarea')
 async def set_area(ctx, user: discord.User, area):
@@ -6509,7 +7060,6 @@ async def set_area(ctx, user: discord.User, area):
     save_player_data()
     await ctx.send(embed=embed)
 
-
 @bot.command(name='addcoins')
 async def add_coins(ctx, user: discord.User, amount):
     """Owner only: Add coins to player"""
@@ -6539,7 +7089,6 @@ async def add_coins(ctx, user: discord.User, amount):
     save_player_data()
     await ctx.send(embed=embed)
 
-
 @bot.command(name='resetplayer')
 async def reset_player(ctx, user: discord.User, confirm=None):
     """Owner only: Reset a player's account"""
@@ -6548,8 +7097,7 @@ async def reset_player(ctx, user: discord.User, confirm=None):
         return
 
     if confirm != "confirm":
-        await ctx.send(
-            f"⚠️ This will completely reset {user.display_name}'s account!\nUse `rpgs resetplayer {user.mention} confirm` to proceed.")
+        await ctx.send(f"⚠️ This will completely reset {user.display_name}'s account!\nUse `rpgs resetplayer {user.mention} confirm` to proceed.")
         return
 
     if str(user.id) in player_data:
@@ -6563,7 +7111,6 @@ async def reset_player(ctx, user: discord.User, confirm=None):
         await ctx.send(embed=embed)
     else:
         await ctx.send(f"{user.display_name} doesn't have an account!")
-
 
 @bot.command(name='settimetravel')
 async def set_time_travel(ctx, user: discord.User, amount):
@@ -6595,13 +7142,12 @@ async def set_time_travel(ctx, user: discord.User, amount):
     embed = discord.Embed(title="⏰ Time Travels Set", color=0x9932cc)
     embed.add_field(name="Player", value=user.display_name, inline=True)
     embed.add_field(name="Time Travels", value=f"{old_tt} → {amount}", inline=True)
-    embed.add_field(name="New Bonuses",
-                    value=f"EXP: +{new_bonuses['exp']}%\nDrops: +{new_bonuses['drops']}%\nWorking: +{new_bonuses['working']}%",
-                    inline=False)
+    embed.add_field(name="New Bonuses", 
+                   value=f"EXP: +{new_bonuses['exp']}%\nDrops: +{new_bonuses['drops']}%\nWorking: +{new_bonuses['working']}%", 
+                   inline=False)
 
     save_player_data()
     await ctx.send(embed=embed)
-
 
 @bot.command(name='allitemname')
 async def all_items_name(ctx):
@@ -6676,7 +7222,6 @@ async def all_items_name(ctx):
         embed.add_field(name="Total Items", value=f"{len(sorted_items)} items found", inline=False)
         await ctx.send(embed=embed)
 
-
 @bot.command(name='ownerhelp')
 async def owner_help(ctx):
     """Owner only: Show owner commands"""
@@ -6685,16 +7230,15 @@ async def owner_help(ctx):
         return
 
     embed = discord.Embed(title="👑 Owner Commands", color=0x9932cc)
-    embed.add_field(name="Player Management",
-                    value="`give <user> <item> [amount]` - Give items\n`setlevel <user> <level>` - Set player level\n`setarea <user> <area>` - Set player area\n`addcoins <user> <amount>` - Add coins\n`settimetravel <user> <amount>` - Set time travels\n`resetplayer <user> confirm` - Reset account",
-                    inline=False)
-    embed.add_field(name="Information",
-                    value="`allitemname` - List all available item names",
-                    inline=False)
+    embed.add_field(name="Player Management", 
+                   value="`give <user> <item> [amount]` - Give items\n`setlevel <user> <level>` - Set player level\n`setarea <user> <area>` - Set player area\n`addcoins <user> <amount>` - Add coins\n`settimetravel <user> <amount>` - Set time travels\n`resetplayer <user> confirm` - Reset account", 
+                   inline=False)
+    embed.add_field(name="Information", 
+                   value="`allitemname` - List all available item names", 
+                   inline=False)
     embed.add_field(name="Note", value="All commands require exact Discord user mentions or IDs", inline=False)
 
     await ctx.send(embed=embed)
-
 
 # Trading system - Enhanced trade rates by area
 TRADE_RATES = {
@@ -6746,7 +7290,6 @@ TRADE_RATES = {
     }
 }
 
-
 @bot.command(name='trade')
 async def trade(ctx, trade_id=None, amount=None):
     player = get_player(ctx.author.id)
@@ -6787,8 +7330,7 @@ async def trade(ctx, trade_id=None, amount=None):
             inv_text += f"{item}: {count}\n"
 
         embed.add_field(name="Your Resources", value=inv_text, inline=True)
-        embed.add_field(name="Usage", value="`rpg trade <ID> [amount]`\nUse 'all' for amount to trade everything",
-                        inline=False)
+        embed.add_field(name="Usage", value="`rpg trade <ID> [amount]`\nUse 'all' for amount to trade everything", inline=False)
 
         await ctx.send(embed=embed)
         return
@@ -6859,7 +7401,6 @@ async def trade(ctx, trade_id=None, amount=None):
 
     save_player_data()
     await ctx.send(embed=embed)
-
 
 # Run the bot
 if __name__ == "__main__":
